@@ -1,31 +1,7 @@
-//
-//  Created by Mike Griebling on 2022-12-31.
-//  Translated from an Objective-C implementation by Kostub Deshmukh.
-//
-//  This software may be modified and distributed under the terms of the
-//  MIT license. See the LICENSE file for details.
-//
-
 import Foundation
 import QuartzCore
 import CoreText
-import SwiftUI
-
-@MainActor func isIos6Supported() -> Bool {
-    if !MTDisplay.initialized {
-#if os(iOS) || os(visionOS)
-        let reqSysVer = "6.0"
-        let currSysVer = UIDevice.current.systemVersion
-        if currSysVer.compare(reqSysVer, options: .numeric) != .orderedAscending {
-            MTDisplay.supported = true
-        }
-#else
-        MTDisplay.supported = true
-#endif
-        MTDisplay.initialized = true
-    }
-    return MTDisplay.supported
-}
+import UIKit
 
 // The Downshift protocol allows an MTDisplay to be shifted down by a given amount.
 protocol DownShift {
@@ -36,8 +12,6 @@ protocol DownShift {
 
 /// The base class for rendering a math equation.
 public class MTDisplay:NSObject {
-    
-    // needed for isIos6Supported() func above
     nonisolated(unsafe) static var initialized = false
     nonisolated(unsafe) static var supported = false
     
@@ -136,17 +110,10 @@ public class MTCTLineDisplay : MTDisplay {
         self.range = range
         self.atoms = atoms
         // We can't use typographic bounds here as the ascent and descent returned are for the font and not for the line.
-        self.width = CTLineGetTypographicBounds(line, nil, nil, nil);
-        if true {
-            let bounds = CTLineGetBoundsWithOptions(line, .useGlyphPathBounds)
-            self.ascent = max(0, CGRectGetMaxY(bounds) - 0);
-            self.descent = max(0, 0 - CGRectGetMinY(bounds));
-            // TODO: Should we use this width vs the typographic width? They are slightly different. Don't know why.
-            // _width = CGRectGetMaxX(bounds);
-        } else {
-            // Our own implementation of the ios6 function to get glyph path bounds.
-            self.computeDimensions(font)
-        }
+        self.width = CTLineGetTypographicBounds(line, nil, nil, nil)
+        let bounds = CTLineGetBoundsWithOptions(line, .useGlyphPathBounds)
+        self.ascent = max(0, CGRectGetMaxY(bounds) - 0)
+        self.descent = max(0, 0 - CGRectGetMinY(bounds))
     }
     
     override var textColor: LaTeXColor? {
@@ -158,27 +125,6 @@ public class MTCTLineDisplay : MTDisplay {
             self.attributedString = attrStr
         }
         get { super.textColor }
-    }
-
-    func computeDimensions(_ font:MTFont?) {
-        let runs = CTLineGetGlyphRuns(line) as NSArray
-        for obj in runs {
-            let run = obj as! CTRun?
-            let numGlyphs = CTRunGetGlyphCount(run!)
-            var glyphs = [CGGlyph]()
-            glyphs.reserveCapacity(numGlyphs)
-            CTRunGetGlyphs(run!, CFRangeMake(0, numGlyphs), &glyphs);
-            let bounds = CTFontGetBoundingRectsForGlyphs(font!.ctFont, .horizontal, glyphs, nil, numGlyphs);
-            let ascent = max(0, CGRectGetMaxY(bounds) - 0);
-            // Descent is how much the line goes below the origin. However if the line is all above the origin, then descent can't be negative.
-            let descent = max(0, 0 - CGRectGetMinY(bounds));
-            if (ascent > self.ascent) {
-                self.ascent = ascent;
-            }
-            if (descent > self.descent) {
-                self.descent = descent;
-            }
-        }
     }
     
     override public func draw(_ context: CGContext) {
@@ -248,7 +194,6 @@ public class MathAtomListDisplay : MTDisplay {
         super.draw(context)
         context.saveGState()
         
-        // Make the current position the origin as all the positions of the sub atoms are relative to the origin.
         context.translateBy(x: self.position.x, y: self.position.y)
         context.textPosition = CGPoint.zero
       

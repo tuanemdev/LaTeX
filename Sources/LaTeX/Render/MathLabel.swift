@@ -1,97 +1,46 @@
 import Foundation
 import CoreText
 
-/**
- Different display styles supported by the `MTMathUILabel`.
- 
- The only significant difference between the two modes is how fractions
- and limits on large operators are displayed.
- */
 public enum MathLabelMode {
-    /// Display mode. Equivalent to $$ in TeX
+    /// Equivalent to $$ in TeX
     case display
-    /// Text mode. Equivalent to $ in TeX.
+    /// Equivalent to $ in TeX.
     case text
 }
 
-/**
-    Horizontal text alignment for `MTMathUILabel`.
- */
-public enum MTTextAlignment : UInt {
-    /// Align left.
+public enum TextAlignment {
     case left
-    /// Align center.
     case center
-    /// Align right.
     case right
 }
 
-/** The main view for rendering math.
- 
- `MTMathLabel` accepts either a string in LaTeX or an `MathAtomList` to display. Use
- `MathAtomList` directly only if you are building it programmatically (e.g. using an
- editor), otherwise using LaTeX is the preferable method.
- 
- The math display is centered vertically in the label. The default horizontal alignment is
- is left. This can be changed by setting `textAlignment`. The math is default displayed in
- *Display* mode. This can be changed using `labelMode`.
- 
- When created it uses `[MTFontManager defaultFont]` as its font. This can be changed using
- the `font` parameter.
- */
 @IBDesignable
-public class MathLabel : LaTeXView {
-        
-    /** The `MathAtomList` to render. Setting this will remove any
-     `latex` that has already been set. If `latex` has been set, this will
-     return the parsed `MathAtomList` if the `latex` parses successfully. Use this
-     setting if the `MathAtomList` has been programmatically constructed, otherwise it
-     is preferred to use `latex`.
-     */
-    public var MathAtomList:MathAtomList? {
-        set {
-            _MathAtomList = newValue
-            _error = nil
-            _latex = MathAtomListBuilder.MathAtomListToString(newValue)
-            self.invalidateIntrinsicContentSize()
-            self.setNeedsLayout()
-        }
-        get { _MathAtomList }
-    }
-    private var _MathAtomList:MathAtomList?
+public class MathLabel: LaTeXView {
+    /// Danh sách các toán tử trong công thức toán học
+    private var mathAtomList: MathAtomList?
     
-    /** The latex string to be displayed. Setting this will remove any `MathAtomList` that
-     has been set. If latex has not been set, this will return the latex output for the
-     `MathAtomList` that is set.
-     @see error */
+    /// Mã LaTeX
     @IBInspectable
-    public var latex:String {
-        set {
-            _latex = newValue
-            _error = nil
-            var error : NSError? = nil
-            _MathAtomList = MathAtomListBuilder.build(fromString: newValue, error: &error)
-            if error != nil {
-                _MathAtomList = nil
-                _error = error
-                self.errorLabel?.text = error!.localizedDescription
-                self.errorLabel?.frame = self.bounds
-                self.errorLabel?.isHidden = !self.displayErrorInline
+    public var latex: String = "" {
+        didSet {
+            errorMessage = nil
+            mathAtomList = MathAtomListBuilder.build(fromString: latex, error: &errorMessage)
+            if let errorMessage {
+                mathAtomList = nil
+                self.errorLabel.text = errorMessage.localizedDescription
+                self.errorLabel.frame = self.bounds
+                self.errorLabel.isHidden = !displayErrorInline
             } else {
-                self.errorLabel?.isHidden = true
+                self.errorLabel.isHidden = true
             }
             self.invalidateIntrinsicContentSize()
             self.setNeedsLayout()
         }
-        get { _latex }
     }
-    private var _latex = ""
     
-    /** This contains any error that occurred when parsing the latex. */
-    public var error:NSError? { _error }
-    private var _error:NSError?
-    
-    /** If true, if there is an error it displays the error message inline. Default true. */
+    /// Dùng để hiển thị lỗi nếu có khi phân tích cú pháp LaTeX
+    private let errorLabel: LaTeXLabel = LaTeXLabel()
+    private var errorMessage: NSError?
     public var displayErrorInline = true
     
     /** The MTFont to use for rendering. */
@@ -147,18 +96,22 @@ public class MathLabel : LaTeXView {
     private var _contentInsets = zeroInsets
     
     /** The Label mode for the label. The default mode is Display */
-    public var labelMode:MathLabelMode {
-        set {
-            _labelMode = newValue
+    public var labelMode: MathLabelMode = .display {
+        didSet {
             self.invalidateIntrinsicContentSize()
             self.setNeedsLayout()
         }
-        get { _labelMode }
     }
-    private var _labelMode = MathLabelMode.display
+    
+    private var currentStyle: LineStyle {
+        switch labelMode {
+            case .display: return .display
+            case .text: return .text
+        }
+    }
     
     /** Horizontal alignment for the text. The default is align left. */
-    public var textAlignment:MTTextAlignment {
+    public var textAlignment:TextAlignment {
         set {
             _textAlignment = newValue
             self.invalidateIntrinsicContentSize()
@@ -166,20 +119,11 @@ public class MathLabel : LaTeXView {
         }
         get { _textAlignment }
     }
-    private var _textAlignment = MTTextAlignment.left
+    private var _textAlignment = TextAlignment.left
     
     /** The internal display of the MTMathUILabel. This is for advanced use only. */
     public var displayList: MathAtomListDisplay? { _displayList }
     private var _displayList:MathAtomListDisplay?
-    
-    public var currentStyle:LineStyle {
-        switch _labelMode {
-            case .display: return .display
-            case .text: return .text
-        }
-    }
-    
-    public var errorLabel: LaTeXLabel?
     
     public override init(frame: CGRect) {
         super.init(frame: frame)
@@ -192,14 +136,14 @@ public class MathLabel : LaTeXView {
     }
     
     func initCommon() {
-#if os(macOS)
+        #if os(macOS)
         self.layer?.isGeometryFlipped = true
-#else
+        #else
         self.layer.isGeometryFlipped = true
-#endif
+        #endif
         _fontSize = 20
         _contentInsets = zeroInsets
-        _labelMode = .display
+        labelMode = .display
         let font = MTFontManager.fontManager.defaultFont
         self.font = font
         _textAlignment = .left
@@ -208,21 +152,14 @@ public class MathLabel : LaTeXView {
         self.backgroundColor = LaTeXColor.clear
         
         _textColor = LaTeXColor.black
-        let label = LaTeXLabel()
-        self.errorLabel = label
-#if os(macOS)
-        label.layer?.isGeometryFlipped = true
-#else
-        label.layer.isGeometryFlipped = true
-#endif
-        label.isHidden = true
-        label.textColor = LaTeXColor.red
-        self.addSubview(label)
+        errorLabel.isHidden = true
+        errorLabel.textColor = LaTeXColor.red
+        self.addSubview(errorLabel)
     }
     
     override public func draw(_ dirtyRect: LaTeXRect) {
         super.draw(dirtyRect)
-        if self.MathAtomList == nil { return }
+        if self.mathAtomList == nil { return }
 
         // drawing code
         let context = currentContext!
@@ -232,11 +169,9 @@ public class MathLabel : LaTeXView {
     }
     
     func _layoutSubviews() {
-        if _MathAtomList != nil {
-            // print("Pre list = \(_MathAtomList!)")
-            _displayList = MTTypesetter.createLineForMathAtomList(_MathAtomList, font: font, style: currentStyle)
+        if mathAtomList != nil {
+            _displayList = MTTypesetter.createLineForMathAtomList(mathAtomList, font: font, style: currentStyle)
             _displayList!.textColor = textColor
-            // print("Post list = \(_MathAtomList!)")
             var textX = CGFloat(0)
             switch self.textAlignment {
                 case .left:   textX = contentInsets.left
@@ -255,32 +190,48 @@ public class MathLabel : LaTeXView {
         } else {
             _displayList = nil
         }
-        errorLabel?.frame = self.bounds
+        errorLabel.frame = self.bounds
         self.setNeedsDisplay()
     }
     
-    func _sizeThatFits(_ size:CGSize) -> CGSize {
-        guard _MathAtomList != nil else { return size }
+    func _sizeThatFits(_ size: CGSize) -> CGSize {
+        guard mathAtomList != nil else { return size }
         var size = size
         var displayList:MathAtomListDisplay? = nil
-        displayList = MTTypesetter.createLineForMathAtomList(_MathAtomList, font: font, style: currentStyle)
+        displayList = MTTypesetter.createLineForMathAtomList(mathAtomList, font: font, style: currentStyle)
         size.width = displayList!.width + contentInsets.left + contentInsets.right
         size.height = displayList!.ascent + displayList!.descent + contentInsets.top + contentInsets.bottom
         return size
     }
     
-#if os(macOS)
-    func setNeedsDisplay() { self.needsDisplay = true }
-    func setNeedsLayout() { self.needsLayout = true }
-    public override var fittingSize: CGSize { _sizeThatFits(CGSizeZero) }
+    #if canImport(AppKit)
+    func setNeedsDisplay() {
+        self.needsDisplay = true
+    }
+    
+    func setNeedsLayout() {
+        self.needsLayout = true
+    }
+    
+    override public var fittingSize: CGSize {
+        _sizeThatFits(CGSizeZero)
+    }
+    
     override public var isFlipped: Bool { false }
+    
     override public func layout() {
         self._layoutSubviews()
         super.layout()
     }
-#else
-    public override var intrinsicContentSize: CGSize { _sizeThatFits(CGSizeZero) }
-    override public func layoutSubviews() { _layoutSubviews() }
-#endif
+    #endif
     
+    #if canImport(UIKit)
+    override public var intrinsicContentSize: CGSize {
+        _sizeThatFits(CGSizeZero)
+    }
+    
+    override public func layoutSubviews() {
+        _layoutSubviews()
+    }
+    #endif
 }

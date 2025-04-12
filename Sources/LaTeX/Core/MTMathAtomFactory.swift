@@ -1,34 +1,25 @@
-//
-//  Created by Mike Griebling on 2022-12-31.
-//  Translated from an Objective-C implementation by Kostub Deshmukh.
-//
-//  This software may be modified and distributed under the terms of the
-//  MIT license. See the LICENSE file for details.
-//
-
 import Foundation
 
-/** A factory to create commonly used MathAtoms. */
-public class MathAtomFactory {
+struct MathAtomFactory {
     
-    public static let aliases = [
-        "lnot" : "neg",
-        "land" : "wedge",
-        "lor" : "vee",
-        "ne" : "neq",
-        "le" : "leq",
-        "ge" : "geq",
-        "lbrace" : "{",
-        "rbrace" : "}",
-        "Vert" : "|",
-        "gets" : "leftarrow",
-        "to" : "rightarrow",
-        "iff" : "Longleftrightarrow",
-        "AA" : "angstrom"
+    static let aliases = [
+        "lnot": "neg",
+        "land": "wedge",
+        "lor": "vee",
+        "ne": "neq",
+        "le": "leq",
+        "ge": "geq",
+        "lbrace": "{",
+        "rbrace": "}",
+        "Vert": "|",
+        "gets": "leftarrow",
+        "to": "rightarrow",
+        "iff": "Longleftrightarrow",
+        "AA": "angstrom"
     ]
     
-    public static let delimiters = [
-        "." : "", // . means no delimiter
+    static let delimiters = [
+        "." : "",
         "(" : "(",
         ")" : ")",
         "[" : "[",
@@ -62,38 +53,28 @@ public class MathAtomFactory {
         "rfloor" : "\u{230B}"
     ]
     
-    private static let delimValueLock = NSLock()
-    nonisolated(unsafe) static var _delimValueToName = [String: String]()
-    public static var delimValueToName: [String: String] {
-        if _delimValueToName.isEmpty {
-            var output = [String: String]()
-            for (key, value) in Self.delimiters {
-                if let existingValue = output[value] {
-                    if key.count > existingValue.count {
+    static let delimValueToName: [String: String] = {
+        var output = [String: String]()
+        for (key, value) in Self.delimiters {
+            if let existingValue = output[value] {
+                if key.count > existingValue.count {
+                    continue
+                } else if key.count == existingValue.count {
+                    if key.compare(existingValue) == .orderedDescending {
                         continue
-                    } else if key.count == existingValue.count {
-                        if key.compare(existingValue) == .orderedDescending {
-                            continue
-                        }
                     }
                 }
-                output[value] = key
             }
-            // protect lazily loading table in a multi-thread concurrent environment
-            delimValueLock.lock()
-            defer { delimValueLock.unlock() }
-            if _delimValueToName.isEmpty {
-                _delimValueToName = output
-            }
+            output[value] = key
         }
-        return _delimValueToName
-    }
+        return output
+    }()
     
-    public static let accents = [
+    static let accents = [
         "grave" :  "\u{0300}",
         "acute" :  "\u{0301}",
-        "hat" :  "\u{0302}",  // In our implementation hat and widehat behave the same.
-        "tilde" :  "\u{0303}", // In our implementation tilde and widetilde behave the same.
+        "hat" :  "\u{0302}",
+        "tilde" :  "\u{0303}",
         "bar" :  "\u{0304}",
         "breve" :  "\u{0306}",
         "dot" :  "\u{0307}",
@@ -104,12 +85,9 @@ public class MathAtomFactory {
         "widetilde" :  "\u{0303}"
     ]
     
-    private static let accentValueLock = NSLock()
-    nonisolated(unsafe) static var _accentValueToName: [String: String]? = nil
-    public static var accentValueToName: [String: String] {
-        if _accentValueToName == nil {
+    static var accentValueToName: [String: String] {
             var output = [String: String]()
-
+            
             for (key, value) in Self.accents {
                 if let existingValue = output[value] {
                     if key.count > existingValue.count {
@@ -122,17 +100,10 @@ public class MathAtomFactory {
                 }
                 output[value] = key
             }
-            // protect lazily loading table in a multi-thread concurrent environment
-            accentValueLock.lock()
-            defer { accentValueLock.unlock() }
-            if _accentValueToName == nil {
-                _accentValueToName = output
-            }
-        }
-        return _accentValueToName!
+        return output
     }
     
-    static var supportedLatexSymbolNames:[String] {
+    static var supportedLatexSymbolNames: [String] {
         let commands = MathAtomFactory.supportedLatexSymbols
         return commands.keys.map { String($0) }
     }
@@ -140,7 +111,7 @@ public class MathAtomFactory {
     nonisolated(unsafe) static var supportedLatexSymbols: [String: MathAtom] = [
         "square" : MathAtomFactory.placeholder(),
         
-         // Greek characters
+        // Greek characters
         "alpha" : MathAtom(type: .variable, value: "\u{03B1}"),
         "beta" : MathAtom(type: .variable, value: "\u{03B2}"),
         "gamma" : MathAtom(type: .variable, value: "\u{03B3}"),
@@ -174,7 +145,7 @@ public class MathAtomFactory {
         "phi" : MathAtom(type: .ordinary, value: "\u{0001D719}"),
         "varrho" : MathAtom(type: .ordinary, value: "\u{0001D71A}"),
         "varpi" : MathAtom(type: .ordinary, value: "\u{0001D71B}"),
-
+        
         // Capital greek characters
         "Gamma" : MathAtom(type: .variable, value: "\u{0393}"),
         "Delta" : MathAtom(type: .variable, value: "\u{0394}"),
@@ -187,19 +158,19 @@ public class MathAtomFactory {
         "Phi" : MathAtom(type: .variable, value: "\u{03A6}"),
         "Psi" : MathAtom(type: .variable, value: "\u{03A8}"),
         "Omega" : MathAtom(type: .variable, value: "\u{03A9}"),
-
+        
         // Open
         "lceil" : MathAtom(type: .open, value: "\u{2308}"),
         "lfloor" : MathAtom(type: .open, value: "\u{230A}"),
         "langle" : MathAtom(type: .open, value: "\u{27E8}"),
         "lgroup" : MathAtom(type: .open, value: "\u{27EE}"),
-
+        
         // Close
         "rceil" : MathAtom(type: .close, value: "\u{2309}"),
         "rfloor" : MathAtom(type: .close, value: "\u{230B}"),
         "rangle" : MathAtom(type: .close, value: "\u{27E9}"),
         "rgroup" : MathAtom(type: .close, value: "\u{27EF}"),
-
+        
         // Arrows
         "leftarrow" : MathAtom(type: .relation, value: "\u{2190}"),
         "uparrow" : MathAtom(type: .relation, value: "\u{2191}"),
@@ -224,8 +195,8 @@ public class MathAtomFactory {
         "Longleftarrow" : MathAtom(type: .relation, value: "\u{27F8}"),
         "Longrightarrow" : MathAtom(type: .relation, value: "\u{27F9}"),
         "Longleftrightarrow" : MathAtom(type: .relation, value: "\u{27FA}"),
-
-
+        
+        
         // Relations
         "leq" : MathAtom(type: .relation, value: UnicodeSymbol.lessEqual),
         "geq" : MathAtom(type: .relation, value: UnicodeSymbol.greaterEqual),
@@ -257,7 +228,7 @@ public class MathAtomFactory {
         "sqsupseteq" : MathAtom(type: .relation, value: "\u{2292}"),
         "models" : MathAtom(type: .relation, value: "\u{22A7}"),
         "perp" : MathAtom(type: .relation, value: "\u{27C2}"),
-
+        
         // operators
         "times" : MathAtomFactory.times(),
         "div"   : MathAtomFactory.divide(),
@@ -285,7 +256,7 @@ public class MathAtomFactory {
         "star"  : MathAtom(type: .binaryOperator, value: "\u{22C6}"),
         "cdot"  : MathAtom(type: .binaryOperator, value: "\u{22C5}"),
         "amalg" : MathAtom(type: .binaryOperator, value: "\u{2A3F}"),
-
+        
         // No limit operators
         "log" : MathAtomFactory.operatorWithName( "log", limits: false),
         "lg" : MathAtomFactory.operatorWithName( "lg", limits: false),
@@ -309,7 +280,7 @@ public class MathAtomFactory {
         "hom" : MathAtomFactory.operatorWithName( "hom", limits: false),
         "exp" : MathAtomFactory.operatorWithName( "exp", limits: false),
         "deg" : MathAtomFactory.operatorWithName( "deg", limits: false),
-
+        
         // Limit operators
         "lim" : MathAtomFactory.operatorWithName( "lim", limits: true),
         "limsup" : MathAtomFactory.operatorWithName( "lim sup", limits: true),
@@ -321,7 +292,7 @@ public class MathAtomFactory {
         "det" : MathAtomFactory.operatorWithName( "det", limits: true),
         "Pr" : MathAtomFactory.operatorWithName( "Pr", limits: true),
         "gcd" : MathAtomFactory.operatorWithName( "gcd", limits: true),
-
+        
         // Large operators
         "prod" : MathAtomFactory.operatorWithName( "\u{220F}", limits: true),
         "coprod" : MathAtomFactory.operatorWithName( "\u{2210}", limits: true),
@@ -337,7 +308,7 @@ public class MathAtomFactory {
         "bigotimes" : MathAtomFactory.operatorWithName( "\u{2A02}", limits: true),
         "biguplus" : MathAtomFactory.operatorWithName( "\u{2A04}", limits: true),
         "bigsqcup" : MathAtomFactory.operatorWithName( "\u{2A06}", limits: true),
-
+        
         // Latex command characters
         "{" : MathAtom(type: .open, value: "{"),
         "}" : MathAtom(type: .close, value: "}"),
@@ -348,26 +319,26 @@ public class MathAtomFactory {
         "_" : MathAtom(type: .ordinary, value: "_"),
         " " : MathAtom(type: .ordinary, value: " "),
         "backslash" : MathAtom(type: .ordinary, value: "\\"),
-
+        
         // Punctuation
         // Note: \colon is different from : which is a relation
         "colon" : MathAtom(type: .punctuation, value: ":"),
         "cdotp" : MathAtom(type: .punctuation, value: "\u{00B7}"),
-
+        
         // Other symbols
         "degree" : MathAtom(type: .ordinary, value: "\u{00B0}"),
         "neg" : MathAtom(type: .ordinary, value: "\u{00AC}"),
         "angstrom" : MathAtom(type: .ordinary, value: "\u{00C5}"),
-		"aa" : MathAtom(type: .ordinary, value: "\u{00E5}"),	// NEW å
-		"ae" : MathAtom(type: .ordinary, value: "\u{00E6}"),	// NEW æ
-		"o"  : MathAtom(type: .ordinary, value: "\u{00F8}"),	// NEW ø
-		"oe" : MathAtom(type: .ordinary, value: "\u{0153}"),	// NEW œ
-		"ss" : MathAtom(type: .ordinary, value: "\u{00DF}"),	// NEW ß
-		"cc" : MathAtom(type: .ordinary, value: "\u{00E7}"),	// NEW ç
-		"CC" : MathAtom(type: .ordinary, value: "\u{00C7}"),	// NEW Ç
-		"O"  : MathAtom(type: .ordinary, value: "\u{00D8}"),	// NEW Ø
-		"AE" : MathAtom(type: .ordinary, value: "\u{00C6}"),	// NEW Æ
-		"OE" : MathAtom(type: .ordinary, value: "\u{0152}"),	// NEW Œ
+        "aa" : MathAtom(type: .ordinary, value: "\u{00E5}"),	// NEW å
+        "ae" : MathAtom(type: .ordinary, value: "\u{00E6}"),	// NEW æ
+        "o"  : MathAtom(type: .ordinary, value: "\u{00F8}"),	// NEW ø
+        "oe" : MathAtom(type: .ordinary, value: "\u{0153}"),	// NEW œ
+        "ss" : MathAtom(type: .ordinary, value: "\u{00DF}"),	// NEW ß
+        "cc" : MathAtom(type: .ordinary, value: "\u{00E7}"),	// NEW ç
+        "CC" : MathAtom(type: .ordinary, value: "\u{00C7}"),	// NEW Ç
+        "O"  : MathAtom(type: .ordinary, value: "\u{00D8}"),	// NEW Ø
+        "AE" : MathAtom(type: .ordinary, value: "\u{00C6}"),	// NEW Æ
+        "OE" : MathAtom(type: .ordinary, value: "\u{0152}"),	// NEW Œ
         "|" : MathAtom(type: .ordinary, value: "\u{2016}"),
         "vert" : MathAtom(type: .ordinary, value: "|"),
         "ldots" : MathAtom(type: .ordinary, value: "\u{2026}"),
@@ -396,7 +367,7 @@ public class MathAtomFactory {
         "jmath" : MathAtom(type: .ordinary, value: "\u{0001D6A5}"),
         "upquote" : MathAtom(type: .ordinary, value: "\u{0027}"),
         "partial" : MathAtom(type: .ordinary, value: "\u{0001D715}"),
-
+        
         // Spacing
         "," : MathSpace(space: 3),
         ">" : MathSpace(space: 4),
@@ -404,99 +375,82 @@ public class MathAtomFactory {
         "!" : MathSpace(space: -3),
         "quad" : MathSpace(space: 18),  // quad = 1em = 18mu
         "qquad" : MathSpace(space: 36), // qquad = 2em
-
+        
         // Style
         "displaystyle" : MathStyle(style: .display),
         "textstyle" : MathStyle(style: .text),
         "scriptstyle" : MathStyle(style: .script),
         "scriptscriptstyle" : MathStyle(style: .scriptOfScript),
     ]
-	
-    nonisolated(unsafe) static var supportedAccentedCharacters: [Character: (String, String)] = [
-		// Acute accents
-		"á": ("acute", "a"), "é": ("acute", "e"), "í": ("acute", "i"),
-		"ó": ("acute", "o"), "ú": ("acute", "u"), "ý": ("acute", "y"),
-		
-		// Grave accents
-		"à": ("grave", "a"), "è": ("grave", "e"), "ì": ("grave", "i"),
-		"ò": ("grave", "o"), "ù": ("grave", "u"),
-		
-		// Circumflex
-		"â": ("hat", "a"), "ê": ("hat", "e"), "î": ("hat", "i"),
-		"ô": ("hat", "o"), "û": ("hat", "u"),
-		
-		// Umlaut/dieresis
-		"ä": ("ddot", "a"), "ë": ("ddot", "e"), "ï": ("ddot", "i"),
-		"ö": ("ddot", "o"), "ü": ("ddot", "u"), "ÿ": ("ddot", "y"),
-		
-		// Tilde
-		"ã": ("tilde", "a"), "ñ": ("tilde", "n"), "õ": ("tilde", "o"),
-		
-		// Special characters
-		"ç": ("cc", ""), "ø": ("o", ""), "å": ("aa", ""), "æ": ("ae", ""),
-		"œ": ("oe", ""), "ß": ("ss", ""),
-		"'": ("upquote", ""),  // this may be dangerous in math mode
-		
-		// Upper case variants
-		"Á": ("acute", "A"), "É": ("acute", "E"), "Í": ("acute", "I"),
-		"Ó": ("acute", "O"), "Ú": ("acute", "U"), "Ý": ("acute", "Y"),
-		"À": ("grave", "A"), "È": ("grave", "E"), "Ì": ("grave", "I"),
-		"Ò": ("grave", "O"), "Ù": ("grave", "U"),
-		"Â": ("hat", "A"), "Ê": ("hat", "E"), "Î": ("hat", "I"),
-		"Ô": ("hat", "O"), "Û": ("hat", "U"),
-		"Ä": ("ddot", "A"), "Ë": ("ddot", "E"), "Ï": ("ddot", "I"),
-		"Ö": ("ddot", "O"), "Ü": ("ddot", "U"),
-		"Ã": ("tilde", "A"), "Ñ": ("tilde", "N"), "Õ": ("tilde", "O"),
-		"Ç": ("CC", ""),
-		"Ø": ("O", ""),
-		"Å": ("AA", ""),
-		"Æ": ("AE", ""),
-		"Œ": ("OE", ""),
-	]
     
-    private static let textToLatexLock = NSLock()
-    nonisolated(unsafe) static var _textToLatexSymbolName: [String: String]? = nil
-    public static var textToLatexSymbolName: [String: String] {
-        get {
-            if self._textToLatexSymbolName == nil {
-                var output = [String: String]()
-                for (key, atom) in Self.supportedLatexSymbols {
-                    if atom.nucleus.count == 0 {
+    static let supportedAccentedCharacters: [Character: (String, String)] = [
+        // Acute accents
+        "á": ("acute", "a"), "é": ("acute", "e"), "í": ("acute", "i"),
+        "ó": ("acute", "o"), "ú": ("acute", "u"), "ý": ("acute", "y"),
+        
+        // Grave accents
+        "à": ("grave", "a"), "è": ("grave", "e"), "ì": ("grave", "i"),
+        "ò": ("grave", "o"), "ù": ("grave", "u"),
+        
+        // Circumflex
+        "â": ("hat", "a"), "ê": ("hat", "e"), "î": ("hat", "i"),
+        "ô": ("hat", "o"), "û": ("hat", "u"),
+        
+        // Umlaut/dieresis
+        "ä": ("ddot", "a"), "ë": ("ddot", "e"), "ï": ("ddot", "i"),
+        "ö": ("ddot", "o"), "ü": ("ddot", "u"), "ÿ": ("ddot", "y"),
+        
+        // Tilde
+        "ã": ("tilde", "a"), "ñ": ("tilde", "n"), "õ": ("tilde", "o"),
+        
+        // Special characters
+        "ç": ("cc", ""), "ø": ("o", ""), "å": ("aa", ""), "æ": ("ae", ""),
+        "œ": ("oe", ""), "ß": ("ss", ""),
+        "'": ("upquote", ""),  // this may be dangerous in math mode
+        
+        // Upper case variants
+        "Á": ("acute", "A"), "É": ("acute", "E"), "Í": ("acute", "I"),
+        "Ó": ("acute", "O"), "Ú": ("acute", "U"), "Ý": ("acute", "Y"),
+        "À": ("grave", "A"), "È": ("grave", "E"), "Ì": ("grave", "I"),
+        "Ò": ("grave", "O"), "Ù": ("grave", "U"),
+        "Â": ("hat", "A"), "Ê": ("hat", "E"), "Î": ("hat", "I"),
+        "Ô": ("hat", "O"), "Û": ("hat", "U"),
+        "Ä": ("ddot", "A"), "Ë": ("ddot", "E"), "Ï": ("ddot", "I"),
+        "Ö": ("ddot", "O"), "Ü": ("ddot", "U"),
+        "Ã": ("tilde", "A"), "Ñ": ("tilde", "N"), "Õ": ("tilde", "O"),
+        "Ç": ("CC", ""),
+        "Ø": ("O", ""),
+        "Å": ("AA", ""),
+        "Æ": ("AE", ""),
+        "Œ": ("OE", ""),
+    ]
+    
+    nonisolated(unsafe) static var textToLatexSymbolName: [String: String] = {
+        var output = [String: String]()
+        for (key, atom) in Self.supportedLatexSymbols {
+            if atom.nucleus.count == 0 {
+                continue
+            }
+            if let existingText = output[atom.nucleus] {
+                // If there are 2 key for the same symbol, choose one deterministically.
+                if key.count > existingText.count {
+                    // Keep the shorter command
+                    continue
+                } else if key.count == existingText.count {
+                    // If the length is the same, keep the alphabetically first
+                    if key.compare(existingText) == .orderedDescending {
                         continue
                     }
-                    if let existingText = output[atom.nucleus] {
-                        // If there are 2 key for the same symbol, choose one deterministically.
-                        if key.count > existingText.count {
-                            // Keep the shorter command
-                            continue
-                        } else if key.count == existingText.count {
-                            // If the length is the same, keep the alphabetically first
-                            if key.compare(existingText) == .orderedDescending {
-                                continue
-                            }
-                        }
-                    }
-                    output[atom.nucleus] = key
-                }
-                // protect lazily loading table in a multi-thread concurrent environment
-                textToLatexLock.lock()
-                defer { textToLatexLock.unlock() }
-                if self._textToLatexSymbolName == nil {
-                    self._textToLatexSymbolName = output
                 }
             }
-            return self._textToLatexSymbolName!
+            output[atom.nucleus] = key
         }
-        // make textToLatexSymbolName readonly (allows internal load)
-        // entries can be lazily added with NSLock protection.
-        // set {
-        //     self._textToLatexSymbolName = newValue
-        // }
-    }
+        // protect lazily loading table in a multi-thread concurrent environment
+        
+        return output
+    }()
     
-  //  public static let sharedInstance = MathAtomFactory()
-    
-    nonisolated(unsafe) static let fontStyles : [String: MathFontStyle] = [
+    static let fontStyles : [String: MathFontStyle] = [
         "mathnormal" : .defaultStyle,
         "mathrm": .roman,
         "textrm": .roman,
@@ -521,42 +475,42 @@ public class MathAtomFactory {
         "text": .roman,
     ]
     
-    public static func fontStyleWithName(_ fontName:String) -> MathFontStyle? {
+    static func fontStyleWithName(_ fontName:String) -> MathFontStyle? {
         fontStyles[fontName]
     }
     
-    public static func fontNameForStyle(_ fontStyle:MathFontStyle) -> String {
+    static func fontNameForStyle(_ fontStyle:MathFontStyle) -> String {
         switch fontStyle {
-            case .defaultStyle: return "mathnormal"
-            case .roman:        return "mathrm"
-            case .bold:         return "mathbf"
-            case .fraktur:      return "mathfrak"
-            case .caligraphic:  return "mathcal"
-            case .italic:       return "mathit"
-            case .sansSerif:    return "mathsf"
-            case .blackboard:   return "mathbb"
-            case .typewriter:   return "mathtt"
-            case .boldItalic:   return "bm"
+        case .defaultStyle: return "mathnormal"
+        case .roman:        return "mathrm"
+        case .bold:         return "mathbf"
+        case .fraktur:      return "mathfrak"
+        case .caligraphic:  return "mathcal"
+        case .italic:       return "mathit"
+        case .sansSerif:    return "mathsf"
+        case .blackboard:   return "mathbb"
+        case .typewriter:   return "mathtt"
+        case .boldItalic:   return "bm"
         }
     }
     
     /// Returns an atom for the multiplication sign (i.e., \times or "*")
-    public static func times() -> MathAtom {
+    static func times() -> MathAtom {
         MathAtom(type: .binaryOperator, value: UnicodeSymbol.multiplication)
     }
     
     /// Returns an atom for the division sign (i.e., \div or "/")
-    public static func divide() -> MathAtom {
+    static func divide() -> MathAtom {
         MathAtom(type: .binaryOperator, value: UnicodeSymbol.division)
     }
     
     /// Returns an atom which is a placeholder square
-    public static func placeholder() -> MathAtom {
+    static func placeholder() -> MathAtom {
         MathAtom(type: .placeholder, value: UnicodeSymbol.whiteSquare)
     }
     
     /** Returns a fraction with a placeholder for the numerator and denominator */
-    public static func placeholderFraction() -> MathFraction {
+    static func placeholderFraction() -> MathFraction {
         let frac = MathFraction()
         frac.numerator = MathAtomList()
         frac.numerator?.add(placeholder())
@@ -566,7 +520,7 @@ public class MathAtomFactory {
     }
     
     /** Returns a square root with a placeholder as the radicand. */
-    public static func placeholderSquareRoot() -> MathRadical {
+    static func placeholderSquareRoot() -> MathRadical {
         let rad = MathRadical()
         rad.radicand = MathAtomList()
         rad.radicand?.add(placeholder())
@@ -574,7 +528,7 @@ public class MathAtomFactory {
     }
     
     /** Returns a radical with a placeholder as the radicand. */
-    public static func placeholderRadical() -> MathRadical {
+    static func placeholderRadical() -> MathRadical {
         let rad = MathRadical()
         rad.radicand = MathAtomList()
         rad.degree = MathAtomList()
@@ -582,25 +536,25 @@ public class MathAtomFactory {
         rad.degree?.add(placeholder())
         return rad
     }
-	
-	public static func atom(fromAccentedCharacter ch: Character) -> MathAtom? {
-		if let symbol = supportedAccentedCharacters[ch] {
-			// first handle any special characters
-			if let atom = atom(forLatexSymbol: symbol.0) {
-				return atom
-			}
-			
-			if let accent = MathAtomFactory.accent(withName: symbol.0) {
-				// The command is an accent
-				let list = MathAtomList()
-				let ch = Array(symbol.1)[0]
-				list.add(atom(forCharacter: ch))
-				accent.innerList = list
-				return accent
-			}
-		}
-		return nil
-	}
+    
+    static func atom(fromAccentedCharacter ch: Character) -> MathAtom? {
+        if let symbol = supportedAccentedCharacters[ch] {
+            // first handle any special characters
+            if let atom = atom(forLatexSymbol: symbol.0) {
+                return atom
+            }
+            
+            if let accent = MathAtomFactory.accent(withName: symbol.0) {
+                // The command is an accent
+                let list = MathAtomList()
+                let ch = Array(symbol.1)[0]
+                list.add(atom(forCharacter: ch))
+                accent.innerList = list
+                return accent
+            }
+        }
+        return nil
+    }
     
     // MARK: -
     /** Gets the atom with the right type for the given character. If an atom
@@ -613,50 +567,50 @@ public class MathAtomFactory {
      - Chars with special meaning in latex: ^ _ { } \
      All other characters, including those with accents, will have a non-nil atom returned.
      */
-    public static func atom(forCharacter ch: Character) -> MathAtom? {
+    static func atom(forCharacter ch: Character) -> MathAtom? {
         let chStr = String(ch)
         switch chStr {
-            case "\u{0410}"..."\u{044F}":
-				// Cyrillic alphabet
-                return MathAtom(type: .ordinary, value: chStr)
-			case _ where supportedAccentedCharacters.keys.contains(ch):
-				// support for áéíóúýàèìòùâêîôûäëïöüÿãñõçøåæœß'ÁÉÍÓÚÝÀÈÌÒÙÂÊÎÔÛÄËÏÖÜÃÑÕÇØÅÆŒ
-				return atom(fromAccentedCharacter: ch)
-            case _ where ch.utf32Char < 0x0021 || ch.utf32Char > 0x007E:
-                return nil
-            case "$", "%", "#", "&", "~", "\'", "^", "_", "{", "}", "\\":
-                return nil
-            case "(", "[":
-                return MathAtom(type: .open, value: chStr)
-            case ")", "]", "!", "?":
-                return MathAtom(type: .close, value: chStr)
-            case ",", ";":
-                return MathAtom(type: .punctuation, value: chStr)
-            case "=", ">", "<":
-                return MathAtom(type: .relation, value: chStr)
-            case ":":
-                // Math colon is ratio. Regular colon is \colon
-                return MathAtom(type: .relation, value: "\u{2236}")
-            case "-":
-                return MathAtom(type: .binaryOperator, value: "\u{2212}")
-            case "+", "*":
-                return MathAtom(type: .binaryOperator, value: chStr)
-            case ".", "0"..."9":
-                return MathAtom(type: .number, value: chStr)
-            case "a"..."z", "A"..."Z":
-                return MathAtom(type: .variable, value: chStr)
-            case "\"", "/", "@", "`", "|":
-                return MathAtom(type: .ordinary, value: chStr)
-            default:
-                assertionFailure("Unknown ASCII character '\(ch)'. Should have been handled earlier.")
-                return nil
+        case "\u{0410}"..."\u{044F}":
+            // Cyrillic alphabet
+            return MathAtom(type: .ordinary, value: chStr)
+        case _ where supportedAccentedCharacters.keys.contains(ch):
+            // support for áéíóúýàèìòùâêîôûäëïöüÿãñõçøåæœß'ÁÉÍÓÚÝÀÈÌÒÙÂÊÎÔÛÄËÏÖÜÃÑÕÇØÅÆŒ
+            return atom(fromAccentedCharacter: ch)
+        case _ where ch.utf32Char < 0x0021 || ch.utf32Char > 0x007E:
+            return nil
+        case "$", "%", "#", "&", "~", "\'", "^", "_", "{", "}", "\\":
+            return nil
+        case "(", "[":
+            return MathAtom(type: .open, value: chStr)
+        case ")", "]", "!", "?":
+            return MathAtom(type: .close, value: chStr)
+        case ",", ";":
+            return MathAtom(type: .punctuation, value: chStr)
+        case "=", ">", "<":
+            return MathAtom(type: .relation, value: chStr)
+        case ":":
+            // Math colon is ratio. Regular colon is \colon
+            return MathAtom(type: .relation, value: "\u{2236}")
+        case "-":
+            return MathAtom(type: .binaryOperator, value: "\u{2212}")
+        case "+", "*":
+            return MathAtom(type: .binaryOperator, value: chStr)
+        case ".", "0"..."9":
+            return MathAtom(type: .number, value: chStr)
+        case "a"..."z", "A"..."Z":
+            return MathAtom(type: .variable, value: chStr)
+        case "\"", "/", "@", "`", "|":
+            return MathAtom(type: .ordinary, value: chStr)
+        default:
+            assertionFailure("Unknown ASCII character '\(ch)'. Should have been handled earlier.")
+            return nil
         }
     }
     
     /** Returns a `MathAtomList` with one atom per character in the given string. This function
      does not do any LaTeX conversion or interpretation. It simply uses `atom(forCharacter:)` to
      convert the characters to atoms. Any character that cannot be converted is ignored. */
-    public static func atomList(for string: String) -> MathAtomList {
+    static func atomList(for string: String) -> MathAtomList {
         let list = MathAtomList()
         for character in string {
             if let newAtom = atom(forCharacter: character) {
@@ -669,7 +623,7 @@ public class MathAtomFactory {
     /** Returns an atom with the right type for a given latex symbol (e.g. theta)
      If the latex symbol is unknown this will return nil. This supports LaTeX aliases as well.
      */
-    public static func atom(forLatexSymbol name: String) -> MathAtom? {
+    static func atom(forLatexSymbol name: String) -> MathAtom? {
         var name = name
         if let canonicalName = aliases[name] {
             name = canonicalName
@@ -688,7 +642,7 @@ public class MathAtomFactory {
      alias.
      Note: This function does not convert MathSpaces to latex command names either.
      */
-    public static func latexSymbolName(for atom: MathAtom) -> String? {
+    static func latexSymbolName(for atom: MathAtom) -> String? {
         guard !atom.nucleus.isEmpty else { return nil }
         return Self.textToLatexSymbolName[atom.nucleus]
     }
@@ -697,19 +651,17 @@ public class MathAtomFactory {
      not already present in the default set, or override existing symbols with new meaning.
      e.g. to define a symbol for "lcm" one can call:
      `MathAtomFactory.add(latexSymbol:"lcm", value:MathAtomFactory.operatorWithName("lcm", limits: false))` */
-    public static func add(latexSymbol name: String, value: MathAtom) {
+    static func add(latexSymbol name: String, value: MathAtom) {
         let _ = Self.textToLatexSymbolName
         // above force textToLatexSymbolName to initialise first, _textToLatexSymbolName also initialized.
         // protect lazily loading table in a multi-thread concurrent environment
-        textToLatexLock.lock()
-        defer { textToLatexLock.unlock() }
         supportedLatexSymbols[name] = value
-        Self._textToLatexSymbolName?[value.nucleus] = name
+        textToLatexSymbolName[value.nucleus] = name
     }
     
     /** Returns a large opertor for the given name. If limits is true, limits are set up on
      the operator and displayed differently. */
-    public static func operatorWithName(_ name: String, limits: Bool) -> MathLargeOperator {
+    static func operatorWithName(_ name: String, limits: Bool) -> MathLargeOperator {
         MathLargeOperator(value: name, limits: limits)
     }
     
@@ -717,7 +669,7 @@ public class MathAtomFactory {
      such as `grave`, `hat` etc. If the name is not a recognized accent name, this
      returns nil. The `innerList` of the returned `MathAccent` is nil.
      */
-    public static func accent(withName name: String) -> MathAccent? {
+    static func accent(withName name: String) -> MathAccent? {
         if let accentValue = accents[name] {
             return MathAccent(value: accentValue)
         }
@@ -726,7 +678,7 @@ public class MathAtomFactory {
     
     /** Returns the accent name for the given accent. This is the reverse of the above
      function. */
-    public static func accentName(_ accent: MathAccent) -> String? {
+    static func accentName(_ accent: MathAccent) -> String? {
         accentValueToName[accent.nucleus]
     }
     
@@ -736,7 +688,7 @@ public class MathAtomFactory {
      @note In order to distinguish between the delimiter '|' and the delimiter '\|' the delimiter '\|'
      the has been renamed to '||'.
      */
-    public static func boundary(forDelimiter name: String) -> MathAtom? {
+    static func boundary(forDelimiter name: String) -> MathAtom? {
         if let delimValue = Self.delimiters[name] {
             return MathAtom(type: .boundary, value: delimValue)
         }
@@ -748,20 +700,20 @@ public class MathAtomFactory {
      @note This is not an exact reverse of the above function. Some delimiters have two names (e.g.
      `<` and `langle`) and this function always returns the shorter name.
      */
-    public static func getDelimiterName(of boundary: MathAtom) -> String? {
+    static func getDelimiterName(of boundary: MathAtom) -> String? {
         guard boundary.type == .boundary else { return nil }
         return Self.delimValueToName[boundary.nucleus]
     }
     
     /** Returns a fraction with the given numerator and denominator. */
-    public static func fraction(withNumerator num: MathAtomList, denominator denom: MathAtomList) -> MathFraction {
+    static func fraction(withNumerator num: MathAtomList, denominator denom: MathAtomList) -> MathFraction {
         let frac = MathFraction()
         frac.numerator = num
         frac.denominator = denom
         return frac
     }
     
-    public static func MathAtomListForCharacters(_ chars:String) -> MathAtomList? {
+    static func MathAtomListForCharacters(_ chars:String) -> MathAtomList? {
         let list = MathAtomList()
         for ch in chars {
             if let atom = self.atom(forCharacter: ch) {
@@ -773,13 +725,13 @@ public class MathAtomFactory {
     
     /** Simplification of above function when numerator and denominator are simple strings.
      This function converts the strings to a `MathFraction`. */
-    public static func fraction(withNumeratorString numStr: String, denominatorString denomStr: String) -> MathFraction {
+    static func fraction(withNumeratorString numStr: String, denominatorString denomStr: String) -> MathFraction {
         let num = Self.atomList(for: numStr)
         let denom = Self.atomList(for: denomStr)
         return Self.fraction(withNumerator: num, denominator: denom)
     }
     
-
+    
     static let matrixEnvs = [
         "matrix": [],
         "pmatrix": ["(", ")"],
@@ -796,7 +748,7 @@ public class MathAtomFactory {
      @note The reason this function returns a `MathAtom` and not a `MTMathTable` is because some
      matrix environments are have builtin delimiters added to the table and hence are returned as inner atoms.
      */
-    public static func table(withEnvironment env: String?, rows: [[MathAtomList]], error:inout NSError?) -> MathAtom? {
+    static func table(withEnvironment env: String?, rows: [[MathAtomList]], error:inout NSError?) -> MathAtom? {
         let table = MathTable(environment: env)
         
         for i in 0..<rows.count {

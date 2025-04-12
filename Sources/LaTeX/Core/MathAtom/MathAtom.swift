@@ -86,19 +86,19 @@ public class MathAtom {
 // MARK: - NSCopying
 extension MathAtom: NSCopying {
     public func copy(with zone: NSZone? = nil) -> Any {
-        let atom = MathAtom()
-        atom.type = self.type
-        atom.nucleus = self.nucleus
-        atom.subScript = MathAtomList(self.subScript)
-        atom.superScript = MathAtomList(self.superScript)
-        atom.indexRange = self.indexRange
-        atom.fontStyle = self.fontStyle
-        atom.fusedAtoms = self.fusedAtoms
-        return atom
+        let copy = MathAtom()
+        copy.type = self.type
+        copy.nucleus = self.nucleus
+        copy.subScript = MathAtomList(self.subScript)
+        copy.superScript = MathAtomList(self.superScript)
+        copy.indexRange = self.indexRange
+        copy.fontStyle = self.fontStyle
+        copy.fusedAtoms = self.fusedAtoms
+        return copy
     }
     
     public func deepCopy() -> MathAtom {
-        self.copy() as! MathAtom
+        self.copy(with: nil) as! MathAtom
     }
 }
 

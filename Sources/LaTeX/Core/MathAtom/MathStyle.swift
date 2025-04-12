@@ -1,14 +1,5 @@
-//
-//  File.swift
-//  LaTeX
-//
-//  Created by Nguyen Tuan Anh on 12/4/25.
-//
-
 import Foundation
-/**
- Styling of a line of math
- */
+
 public enum LineStyle: Int, Comparable {
     /// Display style
     case display
@@ -25,22 +16,39 @@ public enum LineStyle: Int, Comparable {
         return .display
     }
     
-    public var isNotScript:Bool { self < .script }
-    public static func < (lhs: LineStyle, rhs: LineStyle) -> Bool { lhs.rawValue < rhs.rawValue }
+    public var isNotScript: Bool {
+        self < .script
+    }
+    
+    public static func < (lhs: LineStyle, rhs: LineStyle) -> Bool {
+        lhs.rawValue < rhs.rawValue
+    }
 }
 
 // MARK: - MTMathStyle
 public class MathStyle: MathAtom {
     public var style: LineStyle = .display
     
-    init(style:LineStyle) {
+    init(style: LineStyle) {
         super.init()
         self.type = .style
         self.style = style
     }
     
+    override init() {
+        super.init()
+        self.type = .style
+    }
+    
     override public func copy(with zone: NSZone? = nil) -> Any {
-        let copy = super.copy(with: zone) as! MathStyle
+        let copy = MathStyle()
+        copy.type = self.type
+        copy.nucleus = self.nucleus
+        copy.subScript = self.subScript?.deepCopy()
+        copy.superScript = self.superScript?.deepCopy()
+        copy.indexRange = self.indexRange
+        copy.fontStyle = self.fontStyle
+        copy.fusedAtoms = self.fusedAtoms
         copy.style = self.style
         return copy
     }

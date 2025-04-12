@@ -1,21 +1,12 @@
-//
-//  Created by Mike Griebling on 2022-12-31.
-//  Translated from an Objective-C implementation by Kostub Deshmukh.
-//
-//  This software may be modified and distributed under the terms of the
-//  MIT license. See the LICENSE file for details.
-//
-
 import Foundation
 import CoreText
 
 // MARK: - Inter Element Spacing
-
 enum InterElementSpaceType : Int {
     case invalid = -1
     case none = 0
     case thin
-    case nsThin    // Thin but not in script mode
+    case nsThin
     case nsMedium
     case nsThick
 }

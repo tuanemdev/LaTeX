@@ -30,7 +30,7 @@ public class MTFont {
         self.mathTable = MTFontMathTable(withFont:self, mathTable:rawMathTable!)
     }
     
-    static var fontBundle:Bundle {
+    static var fontBundle: Bundle {
         // Uses bundle for class so that this can be access by the unit tests.
         Bundle.module
     }
@@ -55,11 +55,10 @@ public class MTFont {
     }
     
     /** The size of this font in points. */
-    public var fontSize:CGFloat { CTFontGetSize(self.ctFont) }
+    public var fontSize: CGFloat { CTFontGetSize(self.ctFont) }
     
     deinit {
         self.ctFont = nil
         self.defaultCGFont = nil
     }
-    
 }

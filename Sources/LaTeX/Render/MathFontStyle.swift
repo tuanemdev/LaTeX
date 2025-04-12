@@ -6,7 +6,7 @@ import Foundation
  The fontstyle of the atom determines what style the character is rendered in. This only applies to atoms
  of type kMathAtomVariable and kMathAtomNumber. None of the other atom types change their font style.
  */
-public enum MathFontStyle: Int {
+public enum MathFontStyle: Int, Sendable {
     /// The default latex rendering style. i.e. variables are italic and numbers are roman.
     case defaultStyle
     /// Roman font style i.e. \mathrm

@@ -21,7 +21,7 @@ public class MathFraction: MathAtom {
     }
     
     override public func copy(with zone: NSZone? = nil) -> Any {
-        var copy = MathFraction()
+        let copy = MathFraction()
         copy.type = self.type
         copy.nucleus = self.nucleus
         copy.subScript = self.subScript?.deepCopy()

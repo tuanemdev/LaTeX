@@ -1,61 +1,47 @@
-//
-//  File.swift
-//  
-//
-//  Created by Peter Tang on 12/9/2023.
-//
-
-import Foundation
-
-#if os(iOS) || os(visionOS)
-    import UIKit
+#if canImport(UIKit)
+import UIKit
 #endif
 
-#if os(macOS)
-    import AppKit
+#if canImport(AppKit)
+import AppKit
 #endif
 
-public class MTMathImage {
-    public var font: MTFont? = MTFontManager.fontManager.defaultFont
-    public var fontSize:CGFloat {
-        set {
-            _fontSize = newValue
-            let font = font?.copy(withSize: newValue)
-            self.font = font  // also forces an update
-        }
-        get { _fontSize }
-    }
-    private var _fontSize:CGFloat = 0
-    public let textColor: LaTeXColor
-
-    public let labelMode: MathLabelMode
-    public let textAlignment: MTTextAlignment
-
+public struct MathImage {
+    public var fontSize: CGFloat
+    public var textColor: LaTeXColor
+    public var labelMode: MathLabelMode
+    public var textAlignment: TextAlignment
     public var contentInsets: LaTeXEdgeInsets = zeroInsets
-    
     public let latex: String
     private(set) var intrinsicContentSize = CGSize.zero
-
-    public init(latex: String, fontSize: CGFloat, textColor: LaTeXColor, labelMode: MathLabelMode = .display, textAlignment: MTTextAlignment = .center) {
+    
+    public init(
+        latex: String,
+        fontSize: CGFloat,
+        textColor: LaTeXColor,
+        labelMode: MathLabelMode = .display,
+        textAlignment: TextAlignment = .center
+    ) {
         self.latex = latex
+        self.fontSize = fontSize
         self.textColor = textColor
         self.labelMode = labelMode
         self.textAlignment = textAlignment
-        self.fontSize = fontSize
     }
 }
-extension MTMathImage {
+
+extension MathImage {
     public var currentStyle: LineStyle {
         switch labelMode {
-            case .display: return .display
-            case .text: return .text
+        case .display: return .display
+        case .text: return .text
         }
     }
     private func intrinsicContentSize(_ displayList: MathAtomListDisplay) -> CGSize {
         CGSize(width: displayList.width + contentInsets.left + contentInsets.right,
                height: displayList.ascent + displayList.descent + contentInsets.top + contentInsets.bottom)
     }
-    public func asImage() -> (NSError?, LaTeXImage?) {
+    public mutating func asImage() -> (NSError?, LaTeXImage?) {
         func layoutImage(size: CGSize, displayList: MathAtomListDisplay) {
             var textX = CGFloat(0)
             switch self.textAlignment {
@@ -73,17 +59,19 @@ extension MTMathImage {
             let textY = (availableHeight - height) / 2 + displayList.descent + contentInsets.bottom
             displayList.position = CGPoint(x: textX, y: textY)
         }
-
+        
         var error: NSError?
+        let mtfont: MTFont = MTFont(fontWithName: "latinmodern-math", size: fontSize)
+
         guard let MathAtomList = MathAtomListBuilder.build(fromString: latex, error: &error), error == nil,
-              let displayList = MTTypesetter.createLineForMathAtomList(MathAtomList, font: font, style: currentStyle) else {
+              let displayList = MTTypesetter.createLineForMathAtomList(MathAtomList, font: mtfont, style: currentStyle) else {
             return (error, nil)
         }
-         
+
         intrinsicContentSize = intrinsicContentSize(displayList)
         displayList.textColor = textColor
-        
-        let size = intrinsicContentSize
+
+        let size = intrinsicContentSize.regularized
         layoutImage(size: size, displayList: displayList)
         
         #if os(iOS) || os(visionOS)
@@ -113,5 +101,10 @@ private extension CGAffineTransform {
         var transform = CGAffineTransform(scaleX: 1, y: -1)
         transform = transform.translatedBy(x: 0, y: -height)
         return transform
+    }
+}
+extension CGSize {
+    fileprivate var regularized: CGSize {
+        CGSize(width: ceil(width), height: ceil(height))
     }
 }

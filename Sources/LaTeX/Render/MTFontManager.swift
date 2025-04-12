@@ -1,12 +1,3 @@
-
-//
-//  Created by Mike Griebling on 2022-12-31.
-//  Translated from an Objective-C implementation by Kostub Deshmukh.
-//
-//  This software may be modified and distributed under the terms of the
-//  MIT license. See the LICENSE file for details.
-//
-
 import Foundation
 
 public class MTFontManager {
@@ -23,7 +14,6 @@ public class MTFontManager {
 
     public init() { }
 
-    @RWLocked
     var nameToFontMap = [String: MTFont]()
 
     public func font(withName name:String, size:CGFloat) -> MTFont? {

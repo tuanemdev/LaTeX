@@ -1,17 +1,9 @@
-//
-//  Created by Mike Griebling on 2022-12-31.
-//  Translated from an Objective-C implementation by Kostub Deshmukh.
-//
-//  This software may be modified and distributed under the terms of the
-//  MIT license. See the LICENSE file for details.
-//
-
 import Foundation
 
 public struct UnicodeSymbol {
-    static let multiplication              = "\u{00D7}"
-    static let division                    = "\u{00F7}"
-    static let fractionSlash               = "\u{2044}"
+    static let multiplication              = "\u{00D7}" // ×
+    static let division                    = "\u{00F7}" // ÷
+    static let fractionSlash               = "\u{2044}" // ⁄
     static let whiteSquare                 = "\u{25A1}"
     static let blackSquare                 = "\u{25A0}"
     static let lessEqual                   = "\u{2264}"
