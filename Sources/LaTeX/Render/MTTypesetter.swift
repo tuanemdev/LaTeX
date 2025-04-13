@@ -338,7 +338,7 @@ func getBboxDetails(_ bbox:CGRect, ascent:inout CGFloat, descent:inout CGFloat) 
 
 class MTTypesetter {
     var font:MathFont!
-    var displayAtoms = [MTDisplay]()
+    var displayAtoms = [MathAtomDisplay]()
     var currentPosition = CGPoint.zero
     var currentLine:NSMutableAttributedString!
     var currentAtoms = [MathAtom]()   // List of atoms that make the line
@@ -381,7 +381,7 @@ class MTTypesetter {
     
     init(withFont font:MathFont?, style:LineStyle, cramped:Bool, spaced:Bool) {
         self.font = font
-        self.displayAtoms = [MTDisplay]()
+        self.displayAtoms = [MathAtomDisplay]()
         self.currentPosition = CGPoint.zero
         self.cramped = cramped
         self.spaced = spaced
@@ -513,8 +513,8 @@ class MTTypesetter {
                     display!.localTextColor = LaTeXColor(hexString: colorAtom.colorString)
 
                     if prevNode != nil {
-                        let subDisplay: MTDisplay = display!.subDisplays[0]
-                        let subDisplayAtom = (subDisplay as? MTCTLineDisplay)!.atoms[0]
+                        let subDisplay: MathAtomDisplay = display!.subDisplays[0]
+                        let subDisplayAtom = (subDisplay as? MathCTLineDisplay)!.atoms[0]
                         let interElementSpace = self.getInterElementSpace(prevNode!.type, right:subDisplayAtom.type)
                         if currentLine.length > 0 {
                             if interElementSpace > 0 {
@@ -602,7 +602,7 @@ class MTTypesetter {
                     }
                     self.addInterElementSpace(prevNode, currentType:atom.type)
                     let inner =  atom as! MathInner?
-                    var display : MTDisplay? = nil
+                    var display : MathAtomDisplay? = nil
                     if inner!.leftBoundary != nil || inner!.rightBoundary != nil {
                         display = self.makeLeftRight(inner)
                     } else {
@@ -759,14 +759,14 @@ class MTTypesetter {
     }
     
     @discardableResult
-    func addDisplayLine() -> MTCTLineDisplay? {
+    func addDisplayLine() -> MathCTLineDisplay? {
         // add the font
         currentLine.addAttribute(kCTFontAttributeName as NSAttributedString.Key, value:styleFont.ctFont as Any, range:NSMakeRange(0, currentLine.length))
         /*assert(currentLineIndexRange.length == numCodePoints(currentLine.string),
          "The length of the current line: %@ does not match the length of the range (%d, %d)",
          currentLine, currentLineIndexRange.location, currentLineIndexRange.length);*/
         
-        let displayAtom = MTCTLineDisplay(withString:currentLine, position:currentPosition, range:currentLineIndexRange, font:styleFont, atoms:currentAtoms)
+        let displayAtom = MathCTLineDisplay(withString:currentLine, position:currentPosition, range:currentLineIndexRange, font:styleFont, atoms:currentAtoms)
         self.displayAtoms.append(displayAtom)
         // update the position
         currentPosition.x += displayAtom.width;
@@ -834,14 +834,14 @@ class MTTypesetter {
     
     // make scripts for the last atom
     // index is the index of the element which is getting the sub/super scripts.
-    func makeScripts(_ atom: MathAtom?, display:MTDisplay?, index:UInt, delta:CGFloat) {
+    func makeScripts(_ atom: MathAtom?, display:MathAtomDisplay?, index:UInt, delta:CGFloat) {
         assert(atom!.subScript != nil || atom!.superScript != nil)
         
         var superScriptShiftUp = 0.0
         var subscriptShiftDown = 0.0
         
         display?.hasScript = true
-        if !(display is MTCTLineDisplay) {
+        if !(display is MathCTLineDisplay) {
             // get the font in script style
             let scriptFontSize = Self.getStyleSize(self.scriptStyle(), font:font)
             let scriptFont = font.copy(withSize: scriptFontSize)
@@ -855,7 +855,7 @@ class MTTypesetter {
         if atom!.superScript == nil {
             assert(atom!.subScript != nil)
             let _subscript = MTTypesetter.createLineForMathAtomList(atom!.subScript, font:font, style:self.scriptStyle(), cramped:self.subscriptCramped())
-            _subscript?.type = .ssubscript
+            _subscript?.type = .subscript
             _subscript?.index = Int(index)
             
             subscriptShiftDown = fmax(subscriptShiftDown, styleFont.mathTable!.subscriptShiftDown);
@@ -882,7 +882,7 @@ class MTTypesetter {
             return;
         }
         let ssubscript = MTTypesetter.createLineForMathAtomList(atom!.subScript, font:font, style:self.scriptStyle(), cramped:self.subscriptCramped())
-        ssubscript!.type = .ssubscript
+        ssubscript!.type = .subscript
         ssubscript!.index = Int(index)
         subscriptShiftDown = fmax(subscriptShiftDown, styleFont.mathTable!.subscriptShiftDown);
         
@@ -979,7 +979,7 @@ class MTTypesetter {
         return style.inc()
     }
     
-    func makeFraction(_ frac:MathFraction?) -> MTDisplay? {
+    func makeFraction(_ frac:MathFraction?) -> MathAtomDisplay? {
         // lay out the parts of the fraction
         let fractionStyle = self.fractionStyle;
         let numeratorDisplay = MTTypesetter.createLineForMathAtomList(frac!.numerator, font:font, style:fractionStyle(), cramped:false)
@@ -1036,10 +1036,10 @@ class MTTypesetter {
         }
     }
     
-    func addDelimitersToFractionDisplay(_ display:MathFractionDisplay?, forFraction frac:MathFraction?) -> MTDisplay? {
+    func addDelimitersToFractionDisplay(_ display:MathFractionDisplay?, forFraction frac:MathFraction?) -> MathAtomDisplay? {
         assert(!frac!.leftDelimiter.isEmpty || !frac!.rightDelimiter.isEmpty, "Fraction should have a delimiters to call this function");
         
-        var innerElements = [MTDisplay]()
+        var innerElements = [MathAtomDisplay]()
         let glyphHeight = self.fractionDelimiterHeight
         var position = CGPoint.zero
         if !frac!.leftDelimiter.isEmpty {
@@ -1074,13 +1074,13 @@ class MTTypesetter {
         }
     }
     
-    func getRadicalGlyphWithHeight(_ radicalHeight:CGFloat) -> MTDisplayDS? {
+    func getRadicalGlyphWithHeight(_ radicalHeight:CGFloat) -> MathAtomDisplay? {
         var glyphAscent=CGFloat(0), glyphDescent=CGFloat(0), glyphWidth=CGFloat(0)
         
         let radicalGlyph = self.findGlyphForCharacterAtIndex("\u{221A}".startIndex, inString:"\u{221A}")
         let glyph = self.findGlyph(radicalGlyph, withHeight:radicalHeight, glyphAscent:&glyphAscent, glyphDescent:&glyphDescent, glyphWidth:&glyphWidth)
         
-        var glyphDisplay:MTDisplayDS?
+        var glyphDisplay:MathAtomDisplay?
         if glyphAscent + glyphDescent < radicalHeight {
             // the glyphs is not as large as required. A glyph needs to be constructed using the extenders.
             glyphDisplay = self.constructGlyph(radicalGlyph, withHeight:radicalHeight)
@@ -1088,7 +1088,7 @@ class MTTypesetter {
         
         if glyphDisplay == nil {
             // No constructed display so use the glyph we got.
-            glyphDisplay = MTGlyphDisplay(withGlpyh: glyph, range: NSMakeRange(NSNotFound, 0), font:styleFont)
+            glyphDisplay = MathGlyphDisplay(withGlpyh: glyph, range: NSMakeRange(NSNotFound, 0), font:styleFont)
             glyphDisplay!.ascent = glyphAscent;
             glyphDisplay!.descent = glyphDescent;
             glyphDisplay!.width = glyphWidth;
@@ -1169,7 +1169,7 @@ class MTTypesetter {
         return glyphs[numVariants - 1]
     }
     
-    func constructGlyph(_ glyph:CGGlyph, withHeight glyphHeight:CGFloat) -> MTGlyphConstructionDisplay? {
+    func constructGlyph(_ glyph:CGGlyph, withHeight glyphHeight:CGFloat) -> MathGlyphConstructionDisplay? {
         let parts = styleFont.mathTable!.getVerticalGlyphAssembly(forGlyph: glyph)
         if parts.count == 0 {
             return nil
@@ -1179,7 +1179,7 @@ class MTTypesetter {
         self.constructGlyphWithParts(parts, glyphHeight:glyphHeight, glyphs:&glyphs, offsets:&offsets, height:&height)
         var first = glyphs[0].uint16Value
         let width = CTFontGetAdvancesForGlyphs(styleFont.ctFont, .horizontal, &first, nil, 1);
-        let display = MTGlyphConstructionDisplay(withGlyphs: glyphs, offsets: offsets, font: styleFont)
+        let display = MathGlyphConstructionDisplay(withGlyphs: glyphs, offsets: offsets, font: styleFont)
         display.width = width;
         display.ascent = height;
         display.descent = 0;   // it's upto the rendering to adjust the display up or down.
@@ -1267,7 +1267,7 @@ class MTTypesetter {
     
     // MARK: - Large Operators
     
-    func makeLargeOp(_ op:MathLargeOperator!) -> MTDisplay?  {
+    func makeLargeOp(_ op:MathLargeOperator!) -> MathAtomDisplay?  {
         let limits = op.limits && style == .display
         var delta = CGFloat(0)
         if op.nucleus.count == 1 {
@@ -1285,7 +1285,7 @@ class MTTypesetter {
             var ascent=CGFloat(0), descent=CGFloat(0)
             getBboxDetails(bbox, ascent: &ascent, descent: &descent)
             let shiftDown = 0.5*(ascent - descent) - styleFont.mathTable!.axisHeight;
-            let glyphDisplay = MTGlyphDisplay(withGlpyh: glyph, range: op.indexRange, font: styleFont)
+            let glyphDisplay = MathGlyphDisplay(withGlpyh: glyph, range: op.indexRange, font: styleFont)
             glyphDisplay.ascent = ascent;
             glyphDisplay.descent = descent;
             glyphDisplay.width = width;
@@ -1302,12 +1302,12 @@ class MTTypesetter {
             let line = NSMutableAttributedString(string: op.nucleus)
             // add the font
             line.addAttribute(kCTFontAttributeName as NSAttributedString.Key, value:styleFont.ctFont!, range:NSMakeRange(0, line.length))
-            let displayAtom = MTCTLineDisplay(withString: line, position: currentPosition, range: op.indexRange, font: styleFont, atoms: [op])
+            let displayAtom = MathCTLineDisplay(withString: line, position: currentPosition, range: op.indexRange, font: styleFont, atoms: [op])
             return self.addLimitsToDisplay(displayAtom, forOperator:op, delta:0)
         }
     }
     
-    func addLimitsToDisplay(_ display:MTDisplay?, forOperator op:MathLargeOperator, delta:CGFloat) -> MTDisplay? {
+    func addLimitsToDisplay(_ display:MathAtomDisplay?, forOperator op:MathLargeOperator, delta:CGFloat) -> MathAtomDisplay? {
         // If there is no subscript or superscript, just return the current display
         if op.subScript == nil && op.superScript == nil {
             currentPosition.x += display!.width
@@ -1323,7 +1323,7 @@ class MTTypesetter {
                 subScript = MTTypesetter.createLineForMathAtomList(op.subScript, font:font, style:self.scriptStyle(), cramped:self.subscriptCramped())
             }
             assert((superScript != nil) || (subScript != nil), "At least one of superscript or subscript should have been present.");
-            let opsDisplay = MTLargeOpLimitsDisplay(withNucleus:display, upperLimit:superScript, lowerLimit:subScript, limitShift:delta/2, extraPadding:0)
+            let opsDisplay = MathLargeOpLimitsDisplay(withNucleus:display, upperLimit:superScript, lowerLimit:subScript, limitShift:delta/2, extraPadding:0)
             if superScript != nil {
                 let upperLimitGap = max(styleFont.mathTable!.upperLimitGapMin, styleFont.mathTable!.upperLimitBaselineRiseMin - superScript!.descent);
                 opsDisplay.upperLimitGap = upperLimitGap;
@@ -1349,7 +1349,7 @@ class MTTypesetter {
     static let kDelimiterFactor = CGFloat(901)
     static let kDelimiterShortfallPoints = CGFloat(5)
     
-    func makeLeftRight(_ inner: MathInner?) -> MTDisplay? {
+    func makeLeftRight(_ inner: MathInner?) -> MathAtomDisplay? {
         assert(inner!.leftBoundary != nil || inner!.rightBoundary != nil, "Inner should have a boundary to call this function");
         
         let innerListDisplay = MTTypesetter.createLineForMathAtomList(inner!.innerList, font:font, style:style, cramped:cramped, spaced:true)
@@ -1362,7 +1362,7 @@ class MTTypesetter {
         // be at most 5pt short.
         let glyphHeight = max(d1, d2);
         
-        var innerElements = [MTDisplay]()
+        var innerElements = [MathAtomDisplay]()
         var position = CGPoint.zero
         if inner!.leftBoundary != nil && !inner!.leftBoundary!.nucleus.isEmpty {
             let leftGlyph = self.findGlyphForBoundary(inner!.leftBoundary!.nucleus, withHeight:glyphHeight)
@@ -1385,12 +1385,12 @@ class MTTypesetter {
         return innerDisplay
     }
     
-    func findGlyphForBoundary(_ delimiter:String, withHeight glyphHeight:CGFloat) -> MTDisplay? {
+    func findGlyphForBoundary(_ delimiter:String, withHeight glyphHeight:CGFloat) -> MathAtomDisplay? {
         var glyphAscent=CGFloat(0), glyphDescent=CGFloat(0), glyphWidth=CGFloat(0)
         let leftGlyph = self.findGlyphForCharacterAtIndex(delimiter.startIndex, inString:delimiter)
         let glyph = self.findGlyph(leftGlyph, withHeight:glyphHeight, glyphAscent:&glyphAscent, glyphDescent:&glyphDescent, glyphWidth:&glyphWidth)
         
-        var glyphDisplay:MTDisplayDS?
+        var glyphDisplay:MathAtomDisplay?
         if (glyphAscent + glyphDescent < glyphHeight) {
             // we didn't find a pre-built glyph that is large enough
             glyphDisplay = self.constructGlyph(leftGlyph, withHeight:glyphHeight)
@@ -1398,7 +1398,7 @@ class MTTypesetter {
         
         if glyphDisplay == nil {
             // Create a glyph display
-            glyphDisplay = MTGlyphDisplay(withGlpyh: glyph, range: NSMakeRange(NSNotFound, 0), font:styleFont)
+            glyphDisplay = MathGlyphDisplay(withGlpyh: glyph, range: NSMakeRange(NSNotFound, 0), font:styleFont)
             glyphDisplay!.ascent = glyphAscent;
             glyphDisplay!.descent = glyphDescent;
             glyphDisplay!.width = glyphWidth;
@@ -1411,9 +1411,9 @@ class MTTypesetter {
     
     // MARK: - Underline/Overline
     
-    func makeUnderline(_ under:MathUnderLine?) -> MTDisplay? {
+    func makeUnderline(_ under:MathUnderLine?) -> MathAtomDisplay? {
         let innerListDisplay = MTTypesetter.createLineForMathAtomList(under!.innerList, font:font, style:style, cramped:cramped)
-        let underDisplay = MTLineDisplay(withInner: innerListDisplay, position: currentPosition, range: under!.indexRange)
+        let underDisplay = MathLineDisplay(withInner: innerListDisplay, position: currentPosition, range: under!.indexRange)
         // Move the line down by the vertical gap.
         underDisplay.lineShiftUp = -(innerListDisplay!.descent + styleFont.mathTable!.underbarVerticalGap);
         underDisplay.lineThickness = styleFont.mathTable!.underbarRuleThickness;
@@ -1423,9 +1423,9 @@ class MTTypesetter {
         return underDisplay;
     }
     
-    func makeOverline(_ over:MathOverLine?) -> MTDisplay? {
+    func makeOverline(_ over:MathOverLine?) -> MathAtomDisplay? {
         let innerListDisplay = MTTypesetter.createLineForMathAtomList(over!.innerList, font:font, style:style, cramped:true)
-        let overDisplay = MTLineDisplay(withInner:innerListDisplay, position:currentPosition, range:over!.indexRange)
+        let overDisplay = MathLineDisplay(withInner:innerListDisplay, position:currentPosition, range:over!.indexRange)
         overDisplay.lineShiftUp = innerListDisplay!.ascent + styleFont.mathTable!.overbarVerticalGap;
         overDisplay.lineThickness = styleFont.mathTable!.underbarRuleThickness;
         overDisplay.ascent = innerListDisplay!.ascent + styleFont.mathTable!.overbarVerticalGap + styleFont.mathTable!.overbarRuleThickness + styleFont.mathTable!.overbarExtraAscender;
@@ -1517,7 +1517,7 @@ class MTTypesetter {
         return curGlyph;
     }
     
-    func makeAccent(_ accent:MathAccent?) -> MTDisplay? {
+    func makeAccent(_ accent:MathAccent?) -> MathAtomDisplay? {
         var accentee = MTTypesetter.createLineForMathAtomList(accent!.innerList, font:font, style:style, cramped:true)
         if accent!.nucleus.isEmpty {
             // no accent!
@@ -1532,7 +1532,7 @@ class MTTypesetter {
         let skew = self.getSkew(accent, accenteeWidth:accenteeWidth, accentGlyph:accentGlyph)
         let height = accentee!.ascent - delta;  // This is always positive since delta <= height.
         let accentPosition = CGPointMake(skew, height);
-        let accentGlyphDisplay = MTGlyphDisplay(withGlpyh: accentGlyph, range: accent!.indexRange, font: styleFont)
+        let accentGlyphDisplay = MathGlyphDisplay(withGlpyh: accentGlyph, range: accent!.indexRange, font: styleFont)
         accentGlyphDisplay.ascent = glyphAscent;
         accentGlyphDisplay.descent = glyphDescent;
         accentGlyphDisplay.width = glyphWidth;
@@ -1568,18 +1568,18 @@ class MTTypesetter {
     let kLineSkipLimitMultiplier = CGFloat(0)
     let kJotMultiplier = CGFloat(0.3) // A jot is 3pt for a 10pt font.
     
-    func makeTable(_ table:MathTable?) -> MTDisplay? {
+    func makeTable(_ table:MathTable?) -> MathAtomDisplay? {
         let numColumns = table!.numColumns;
         if numColumns == 0 || table!.numRows == 0 {
             // Empty table
-            return MathAtomListDisplay(withDisplays: [MTDisplay](), range: table!.indexRange)
+            return MathAtomListDisplay(withDisplays: [MathAtomDisplay](), range: table!.indexRange)
         }
 
         var columnWidths = [CGFloat](repeating: 0, count: numColumns)
         let displays = self.typesetCells(table, columnWidths:&columnWidths)
 
         // Position all the columns in each row
-        var rowDisplays = [MTDisplay]()
+        var rowDisplays = [MathAtomDisplay]()
         for row in displays {
             let rowDisplay = self.makeRowWithColumns(row, forTable:table, columnWidths:columnWidths)
             rowDisplays.append(rowDisplay!)
@@ -1593,10 +1593,10 @@ class MTTypesetter {
     }
     
     // Typeset every cell in the table. As a side-effect calculate the max column width of each column.
-    func typesetCells(_ table:MathTable?, columnWidths: inout [CGFloat]) -> [[MTDisplay]] {
-        var displays = [[MTDisplay]]()
+    func typesetCells(_ table:MathTable?, columnWidths: inout [CGFloat]) -> [[MathAtomDisplay]] {
+        var displays = [[MathAtomDisplay]]()
         for row in table!.cells {
-            var colDisplays = [MTDisplay]()
+            var colDisplays = [MathAtomDisplay]()
             for i in 0..<row.count {
                 let disp = MTTypesetter.createLineForMathAtomList(row[i], font:font, style:style)
                 columnWidths[i] = max(disp!.width, columnWidths[i])
@@ -1607,7 +1607,7 @@ class MTTypesetter {
         return displays
     }
     
-    func makeRowWithColumns(_ cols:[MTDisplay], forTable table:MathTable?, columnWidths:[CGFloat]) -> MathAtomListDisplay? {
+    func makeRowWithColumns(_ cols:[MathAtomDisplay], forTable table:MathTable?, columnWidths:[CGFloat]) -> MathAtomListDisplay? {
         var columnStart = CGFloat(0)
         var rowRange = NSMakeRange(NSNotFound, 0);
         for i in 0..<cols.count {
@@ -1638,7 +1638,7 @@ class MTTypesetter {
         return rowDisplay
     }
     
-    func positionRows(_ rows:[MTDisplay], forTable table:MathTable?) {
+    func positionRows(_ rows:[MathAtomDisplay], forTable table:MathTable?) {
         // Position the rows
         // We will first position the rows starting from 0 and then in the second pass center the whole table vertically.
         var currPos = CGFloat(0)
