@@ -330,7 +330,7 @@ final class MathRadicalDisplay: MathAtomDisplay {
         self.range = range
     }
 
-    func setDegree(_ degree: MathAtomListDisplay?, fontMetrics: MathFontMathTable?) {
+    func setDegree(_ degree: MathAtomListDisplay?, fontMetrics: MathFontTable?) {
         // sets up the degree of the radical
         var kernBefore = fontMetrics!.radicalKernBeforeDegree
         let kernAfter = fontMetrics!.radicalKernAfterDegree

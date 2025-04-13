@@ -46,7 +46,7 @@ public class MathLabel: LaTeXView {
     public var displayErrorInline = true
     
     /// Font chữ sử dụng để render công thức toán học
-    public var mathFont: MathFont? = MathFontManager.fontManager.defaultFont {
+    public var mathFont: MathFont? = MathFontType.defaultMathFont {
         didSet {
             self.invalidateIntrinsicContentSize()
             self.setNeedsLayout()

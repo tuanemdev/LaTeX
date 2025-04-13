@@ -2,10 +2,9 @@ import Foundation
 import CoreText
 
 public class MathFont {
-    
     var defaultCGFont: CGFont!
     var ctFont: CTFont!
-    var mathTable: MathFontMathTable?
+    var mathTable: MathFontTable?
     var rawMathTable: NSDictionary?
     
     init() {}
@@ -13,7 +12,7 @@ public class MathFont {
     /// `MathFont(fontWithName:)` does not load the complete math font, it only has about half the glyphs of the full math font.
     /// In particular it does not have the math italic characters which breaks our variable rendering.
     /// So we first load a CGFont from the file and then convert it to a CTFont.
-    convenience init(fontWithName name: String, size:CGFloat) {
+    convenience init(fontWithName name: String, size: CGFloat) {
         self.init()
         //print("Loading font \(name)")
         let bundle = MathFont.fontBundle
@@ -27,7 +26,7 @@ public class MathFont {
         //print("Loading associated .plist")
         let mathTablePlist = bundle.url(forResource:name, withExtension:"plist")
         self.rawMathTable = NSDictionary(contentsOf: mathTablePlist!)
-        self.mathTable = MathFontMathTable(withFont:self, mathTable:rawMathTable!)
+        self.mathTable = MathFontTable(withFont:self, mathTable:rawMathTable!)
     }
     
     static var fontBundle: Bundle {
@@ -41,7 +40,7 @@ public class MathFont {
         newFont.defaultCGFont = self.defaultCGFont
         newFont.ctFont = CTFontCreateWithGraphicsFont(self.defaultCGFont, size, nil, nil)
         newFont.rawMathTable = self.rawMathTable
-        newFont.mathTable = MathFontMathTable(withFont: newFont, mathTable: newFont.rawMathTable!)
+        newFont.mathTable = MathFontTable(withFont: newFont, mathTable: newFont.rawMathTable!)
         return newFont
     }
     

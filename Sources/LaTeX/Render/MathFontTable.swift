@@ -32,7 +32,7 @@ struct GlyphPart {
  
  Remark: This class is not meant to be used outside of this library.
  */
-class MathFontMathTable {
+class MathFontTable {
     
     // The font for this math table.
     public private(set) weak var font:MathFont? // @property (nonatomic, readonly, weak) MathFont* font;
