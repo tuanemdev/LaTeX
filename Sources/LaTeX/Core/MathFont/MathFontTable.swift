@@ -1,41 +1,12 @@
 import Foundation
 import CoreText
 
-struct GlyphPart {
-    /// The glyph that represents this part
-    var glyph: CGGlyph!
-
-    /// Full advance width/height for this part, in the direction of the extension in points.
-    var fullAdvance: CGFloat = 0
-
-    /// Advance width/ height of the straight bar connector material at the beginning of the glyph in points.
-    var startConnectorLength: CGFloat = 0
-
-    /// Advance width/ height of the straight bar connector material at the end of the glyph in points.
-    var endConnectorLength: CGFloat = 0
-
-    /// If this part is an extender. If set, the part can be skipped or repeated.
-    var isExtender: Bool = false
-}
-
-/** This class represents the Math table of an open type font.
- 
- The math table is documented here: https://www.microsoft.com/typography/otspec/math.htm
- 
- How the constants in this class affect the display is documented here:
- http://www.tug.org/TUGboat/tb30-1/tb94vieth.pdf
-
- Note: We don't parse the math table from the open type font. Rather we parse it
- in python and convert it to a .plist file which is easily consumed by this class.
- This approach is preferable to spending an inordinate amount of time figuring out
- how to parse the returned NSData object using the open type rules.
- 
- Remark: This class is not meant to be used outside of this library.
- */
+/// This class represents the Math table of an open type font.
+/// The math table is documented here: https://www.microsoft.com/typography/otspec/math.htm
+/// How the constants in this class affect the display is documented here: http://www.tug.org/TUGboat/tb30-1/tb94vieth.pdf
 class MathFontTable {
-    
     // The font for this math table.
-    public private(set) weak var font:MathFont? // @property (nonatomic, readonly, weak) MathFont* font;
+    private(set) var font: MathFont? // @property (nonatomic, readonly, weak) MathFont* font;
     
     var _unitsPerEm: UInt
     var _fontSize: CGFloat
@@ -52,7 +23,6 @@ class MathFontTable {
     
     init(withFont font: MathFont?, mathTable:NSDictionary) {
         assert(font != nil, "font has nil value")
-        assert(font!.ctFont != nil, "font.ctFont has nil value")
         self.font = font
         // do domething with font
         _unitsPerEm = UInt(CTFontGetUnitsPerEm(font!.ctFont))
@@ -193,18 +163,18 @@ class MathFontTable {
     }
     
     func getVariantsForGlyph(_ glyph: CGGlyph, inDictionary variants:NSDictionary) -> [NSNumber?] {
-        let glyphName = self.font!.get(nameForGlyph: glyph)
+        let glyphName = self.font!.getName(for: glyph)
         let variantGlyphs = variants[glyphName] as! NSArray?
         var glyphArray = [NSNumber]()
         if variantGlyphs == nil || variantGlyphs?.count == 0 {
             // There are no extra variants, so just add the current glyph to it.
-            let glyph = self.font!.get(glyphWithName: glyphName)
+            let glyph = self.font!.getGlyph(with: glyphName)
             glyphArray.append(NSNumber(value:glyph))
             return glyphArray
         }
         for gvn in variantGlyphs! {
             let glyphVariantName = gvn as! String?
-            let variantGlyph = self.font?.get(glyphWithName: glyphVariantName!)
+            let variantGlyph = self.font?.getGlyph(with: glyphVariantName!)
             glyphArray.append(NSNumber(value:variantGlyph!))
         }
         return glyphArray
@@ -215,7 +185,7 @@ class MathFontTable {
      */
     func getLargerGlyph(_ glyph:CGGlyph) -> CGGlyph {
         let variants = _mathTable[kVertVariants] as! NSDictionary?
-        let glyphName = self.font?.get(nameForGlyph: glyph)
+        let glyphName = self.font?.getName(for: glyph)
         let variantGlyphs = variants![glyphName!] as! NSArray?
         if variantGlyphs == nil || variantGlyphs?.count == 0 {
             // There are no extra variants, so just returnt the current glyph.
@@ -225,7 +195,7 @@ class MathFontTable {
         for gvn in variantGlyphs! {
             let glyphVariantName = gvn as! String?
             if glyphVariantName != glyphName {
-                let variantGlyph = self.font?.get(glyphWithName: glyphVariantName!)
+                let variantGlyph = self.font?.getGlyph(with: glyphVariantName!)
                 return variantGlyph!
             }
         }
@@ -241,7 +211,7 @@ class MathFontTable {
      isn't any this returns 0. */
     func getItalicCorrection(_ glyph: CGGlyph) -> CGFloat {
         let italics = _mathTable[kItalic] as! NSDictionary?
-        let glyphName = self.font?.get(nameForGlyph: glyph)
+        let glyphName = self.font?.getName(for: glyph)
         let val = italics![glyphName!] as! NSNumber?
         // if val is nil, this returns 0.
         return self.fontUnitsToPt(val?.intValue ?? 0)
@@ -256,7 +226,7 @@ class MathFontTable {
     func getTopAccentAdjustment(_ glyph: CGGlyph) -> CGFloat {
         var glyph = glyph
         let accents = _mathTable[kAccents] as! NSDictionary?
-        let glyphName = self.font?.get(nameForGlyph: glyph)
+        let glyphName = self.font?.getName(for: glyph)
         let val = accents![glyphName!] as! NSNumber?
         if let val = val {
             return self.fontUnitsToPt(val.intValue)
@@ -280,7 +250,7 @@ class MathFontTable {
      of this glyph. If there is no glyph assembly defined, returns an empty array. */
     func getVerticalGlyphAssembly(forGlyph glyph:CGGlyph) -> [GlyphPart] {
         let assemblyTable = _mathTable[kVertAssembly] as! NSDictionary?
-        let glyphName = self.font?.get(nameForGlyph: glyph)
+        let glyphName = self.font?.getName(for: glyph)
         let assemblyInfo = assemblyTable![glyphName!] as! NSDictionary?
         if assemblyInfo == nil {
             // No vertical assembly defined for glyph
@@ -304,7 +274,7 @@ class MathFontTable {
             let ext = partInfo!["extender"] as! NSNumber?
             part.isExtender = ext!.boolValue
             let glyphName = partInfo!["glyph"] as! String?
-            part.glyph = self.font?.get(glyphWithName: glyphName!)
+            part.glyph = self.font?.getGlyph(with: glyphName!)
             rv.append(part)
         }
         return rv

@@ -61,7 +61,7 @@ extension MathImage {
         }
         
         var error: NSError?
-        let MathFont: MathFont = MathFont(fontWithName: "latinmodern-math", size: fontSize)
+        let MathFont: MathFont = MathFont(name: "latinmodern-math", size: fontSize)
 
         guard let MathAtomList = MathAtomListBuilder.build(fromString: latex, error: &error), error == nil,
               let displayList = MTTypesetter.createLineForMathAtomList(MathAtomList, font: MathFont, style: currentStyle) else {

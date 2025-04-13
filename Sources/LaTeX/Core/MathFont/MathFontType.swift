@@ -16,7 +16,7 @@ public enum MathFontType: String {
     case leteSans       = "LeteSansMath"
     
     func mathFont(withSize size: CGFloat) -> MathFont {
-        return MathFont(fontWithName: self.rawValue, size: size)
+        return MathFont(name: self.rawValue, size: size)
     }
     
     static var defaultMathFont: MathFont {
