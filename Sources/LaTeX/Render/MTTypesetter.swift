@@ -337,15 +337,15 @@ func getBboxDetails(_ bbox:CGRect, ascent:inout CGFloat, descent:inout CGFloat) 
 // MARK: - MTTypesetter
 
 class MTTypesetter {
-    var font:MTFont!
+    var font:MathFont!
     var displayAtoms = [MTDisplay]()
     var currentPosition = CGPoint.zero
     var currentLine:NSMutableAttributedString!
     var currentAtoms = [MathAtom]()   // List of atoms that make the line
     var currentLineIndexRange = NSMakeRange(0, 0)
     var style:LineStyle { didSet { _styleFont = nil } }
-    private var _styleFont:MTFont?
-    var styleFont:MTFont {
+    private var _styleFont:MathFont?
+    var styleFont:MathFont {
         if _styleFont == nil {
             _styleFont = font.copy(withSize: Self.getStyleSize(style, font: font))
         }
@@ -354,19 +354,19 @@ class MTTypesetter {
     var cramped = false
     var spaced = false
     
-    static func createLineForMathAtomList(_ MathAtomList:MathAtomList?, font:MTFont?, style:LineStyle) -> MathAtomListDisplay? {
+    static func createLineForMathAtomList(_ MathAtomList:MathAtomList?, font:MathFont?, style:LineStyle) -> MathAtomListDisplay? {
         let finalizedList = MathAtomList?.finalized
         // default is not cramped
         return self.createLineForMathAtomList(finalizedList, font:font, style:style, cramped:false)
     }
     
     // Internal
-    static func createLineForMathAtomList(_ MathAtomList:MathAtomList?, font:MTFont?, style:LineStyle, cramped:Bool) -> MathAtomListDisplay? {
+    static func createLineForMathAtomList(_ MathAtomList:MathAtomList?, font:MathFont?, style:LineStyle, cramped:Bool) -> MathAtomListDisplay? {
         return self.createLineForMathAtomList(MathAtomList, font:font, style:style, cramped:cramped, spaced:false)
     }
     
     // Internal
-    static func createLineForMathAtomList(_ MathAtomList:MathAtomList?, font:MTFont?, style:LineStyle, cramped:Bool, spaced:Bool) -> MathAtomListDisplay? {
+    static func createLineForMathAtomList(_ MathAtomList:MathAtomList?, font:MathFont?, style:LineStyle, cramped:Bool, spaced:Bool) -> MathAtomListDisplay {
         assert(font != nil)
         let preprocessedAtoms = self.preprocessMathAtomList(MathAtomList)
         let typesetter = MTTypesetter(withFont:font, style:style, cramped:cramped, spaced:spaced)
@@ -379,7 +379,7 @@ class MTTypesetter {
     
     static var placeholderColor: LaTeXColor { LaTeXColor.blue }
     
-    init(withFont font:MTFont?, style:LineStyle, cramped:Bool, spaced:Bool) {
+    init(withFont font:MathFont?, style:LineStyle, cramped:Bool, spaced:Bool) {
         self.font = font
         self.displayAtoms = [MTDisplay]()
         self.currentPosition = CGPoint.zero
@@ -430,7 +430,7 @@ class MTTypesetter {
     }
     
     // returns the size of the font in this style
-    static func getStyleSize(_ style:LineStyle, font:MTFont?) -> CGFloat {
+    static func getStyleSize(_ style:LineStyle, font:MathFont?) -> CGFloat {
         let original = font!.fontSize
         switch style {
             case .display, .text:
@@ -1355,7 +1355,7 @@ class MTTypesetter {
         let innerListDisplay = MTTypesetter.createLineForMathAtomList(inner!.innerList, font:font, style:style, cramped:cramped, spaced:true)
         let axisHeight = styleFont.mathTable!.axisHeight
         // delta is the max distance from the axis
-        let delta = max(innerListDisplay!.ascent - axisHeight, innerListDisplay!.descent + axisHeight);
+        let delta = max(innerListDisplay.ascent - axisHeight, innerListDisplay.descent + axisHeight);
         let d1 = (delta / 500) * MTTypesetter.kDelimiterFactor;  // This represents atleast 90% of the formula
         let d2 = 2 * delta - MTTypesetter.kDelimiterShortfallPoints;  // This represents a shortfall of 5pt
         // The size of the delimiter glyph should cover at least 90% of the formula or
@@ -1371,9 +1371,9 @@ class MTTypesetter {
             innerElements.append(leftGlyph!)
         }
         
-        innerListDisplay!.position = position;
-        position.x += innerListDisplay!.width;
-        innerElements.append(innerListDisplay!)
+        innerListDisplay.position = position;
+        position.x += innerListDisplay.width;
+        innerElements.append(innerListDisplay)
         
         if inner!.rightBoundary != nil && !inner!.rightBoundary!.nucleus.isEmpty {
             let rightGlyph = self.findGlyphForBoundary(inner!.rightBoundary!.nucleus, withHeight:glyphHeight)

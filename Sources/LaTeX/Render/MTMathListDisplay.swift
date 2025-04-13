@@ -1,7 +1,9 @@
 import Foundation
 import QuartzCore
 import CoreText
+#if canImport(UIKit)
 import UIKit
+#endif
 
 // The Downshift protocol allows an MTDisplay to be shifted down by a given amount.
 protocol DownShift {
@@ -102,7 +104,7 @@ public class MTCTLineDisplay : MTDisplay {
     /// An array of MathAtoms that this CTLine displays. Used for indexing back into the MathAtomList
     public fileprivate(set) var atoms = [MathAtom]()
     
-    init(withString attrString:NSAttributedString?, position:CGPoint, range:NSRange, font:MTFont?, atoms:[MathAtom]) {
+    init(withString attrString:NSAttributedString?, position:CGPoint, range:NSRange, font:MathFont?, atoms:[MathAtom]) {
         super.init()
         self.position = position
         self.attributedString = attrString
@@ -373,7 +375,7 @@ class MathRadicalDisplay : MTDisplay {
         self.range = range
     }
 
-    func setDegree(_ degree:MathAtomListDisplay?, fontMetrics:MTFontMathTable?) {
+    func setDegree(_ degree:MathAtomListDisplay?, fontMetrics:MathFontMathTable?) {
         // sets up the degree of the radical
         var kernBefore = fontMetrics!.radicalKernBeforeDegree;
         let kernAfter = fontMetrics!.radicalKernAfterDegree;
@@ -450,9 +452,9 @@ class MathRadicalDisplay : MTDisplay {
 class MTGlyphDisplay : MTDisplayDS {
     
     var glyph:CGGlyph!
-    var font:MTFont?
+    var font:MathFont?
     
-    init(withGlpyh glyph:CGGlyph, range:NSRange, font:MTFont?) {
+    init(withGlpyh glyph:CGGlyph, range:NSRange, font:MathFont?) {
         super.init()
         self.font = font
         self.glyph = glyph
@@ -494,10 +496,10 @@ class MTGlyphDisplay : MTDisplayDS {
 class MTGlyphConstructionDisplay:MTDisplayDS {
     var glyphs = [CGGlyph]()
     var positions = [CGPoint]()
-    var font:MTFont?
+    var font:MathFont?
     var numGlyphs:Int=0
     
-    init(withGlyphs glyphs:[NSNumber?], offsets:[NSNumber?], font:MTFont?) {
+    init(withGlyphs glyphs:[NSNumber?], offsets:[NSNumber?], font:MathFont?) {
         super.init()
         assert(glyphs.count == offsets.count, "Glyphs and offsets need to match")
         self.numGlyphs = glyphs.count;

@@ -32,10 +32,10 @@ struct GlyphPart {
  
  Remark: This class is not meant to be used outside of this library.
  */
-class MTFontMathTable {
+class MathFontMathTable {
     
     // The font for this math table.
-    public private(set) weak var font:MTFont? // @property (nonatomic, readonly, weak) MTFont* font;
+    public private(set) weak var font:MathFont? // @property (nonatomic, readonly, weak) MathFont* font;
     
     var _unitsPerEm: UInt
     var _fontSize: CGFloat
@@ -50,7 +50,7 @@ class MTFontMathTable {
         CGFloat(fontUnits) * _fontSize / CGFloat(_unitsPerEm)
     }
     
-    init(withFont font: MTFont?, mathTable:NSDictionary) {
+    init(withFont font: MathFont?, mathTable:NSDictionary) {
         assert(font != nil, "font has nil value")
         assert(font!.ctFont != nil, "font.ctFont has nil value")
         self.font = font
