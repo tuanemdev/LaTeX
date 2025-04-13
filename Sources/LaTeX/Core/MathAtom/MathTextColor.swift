@@ -27,7 +27,14 @@ public class MathTextColor: MathAtom {
     }
     
     override public func copy(with zone: NSZone? = nil) -> Any {
-        let copy = super.copy(with: zone) as! MathTextColor
+        let copy = MathTextColor()
+        copy.type = self.type
+        copy.nucleus = self.nucleus
+        copy.subScript = self.subScript?.deepCopy()
+        copy.superScript = self.superScript?.deepCopy()
+        copy.indexRange = self.indexRange
+        copy.fontStyle = self.fontStyle
+        copy.fusedAtoms = self.fusedAtoms
         copy.colorString = self.colorString
         copy.innerList = self.innerList?.deepCopy()
         return copy

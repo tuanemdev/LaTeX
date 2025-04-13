@@ -3,6 +3,11 @@ import Foundation
 public class MathAccent: MathAtom {
     public var innerList:  MathAtomList?
     
+    override init() {
+        super.init()
+        self.type = .accent
+    }
+    
     init(value: String) {
         super.init()
         self.type = .accent
@@ -16,7 +21,14 @@ public class MathAccent: MathAtom {
     }
     
     override public func copy(with zone: NSZone? = nil) -> Any {
-        let copy = super.copy(with: zone) as! MathAccent
+        let copy = MathAccent()
+        copy.type = self.type
+        copy.nucleus = self.nucleus
+        copy.subScript = MathAtomList(self.subScript)
+        copy.superScript = MathAtomList(self.superScript)
+        copy.indexRange = self.indexRange
+        copy.fontStyle = self.fontStyle
+        copy.fusedAtoms = self.fusedAtoms
         copy.innerList = self.innerList?.deepCopy()
         return copy
     }

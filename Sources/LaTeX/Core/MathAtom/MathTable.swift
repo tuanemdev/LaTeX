@@ -40,6 +40,17 @@ public class MathTable: MathAtom {
     /// If the additional spacing is 0, then normal row spacing is used are used.
     public var interRowAdditionalSpacing: CGFloat = 0
     
+    init(environment: String?) {
+        super.init()
+        self.type = .table
+        self.environment = environment ?? ""
+    }
+    
+    override init() {
+        super.init()
+        self.type = .table
+    }
+    
     override public var finalized: MathAtom {
         let table = super.finalized as! MathTable
         for var row in table.cells {
@@ -50,25 +61,21 @@ public class MathTable: MathAtom {
         return table
     }
     
-    init(environment: String?) {
-        super.init()
-        self.type = .table
-        self.environment = environment ?? ""
-    }
-    
     override public func copy(with zone: NSZone? = nil) -> Any {
-        let copy = super.copy(with: zone) as! MathTable
+        let copy = MathTable()
+        copy.type = self.type
+        copy.nucleus = self.nucleus
+        copy.subScript = self.subScript?.deepCopy()
+        copy.superScript = self.superScript?.deepCopy()
+        copy.indexRange = self.indexRange
+        copy.fontStyle = self.fontStyle
+        copy.fusedAtoms = self.fusedAtoms
         copy.alignments = self.alignments
         copy.interRowAdditionalSpacing = self.interRowAdditionalSpacing
         copy.interColumnSpacing = self.interColumnSpacing
         copy.environment = self.environment
         copy.cells = self.cells.map { $0.map { $0.deepCopy() } }
         return copy
-    }
-    
-    override init() {
-        super.init()
-        self.type = .table
     }
     
     /// Set the value of a given cell. The table is automatically resized to contain this cell.
