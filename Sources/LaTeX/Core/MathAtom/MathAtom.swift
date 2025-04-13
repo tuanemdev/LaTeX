@@ -11,7 +11,7 @@ public class MathAtom {
     /// Danh sách toán tử dưới dòng
     public var subScript: MathAtomList? {
         didSet {
-            if !isScriptAllowed {
+            if subScript != nil && !isScriptAllowed {
                 fatalError("Subscripts not allowed for atom of type \(self.type)")
             }
         }
@@ -20,7 +20,7 @@ public class MathAtom {
     /// Danh sách toán tử trên dòng
     public var superScript: MathAtomList? {
         didSet {
-            if !isScriptAllowed {
+            if superScript != nil && !isScriptAllowed {
                 fatalError("Superscripts not allowed for atom of type \(self.type)")
             }
         }
