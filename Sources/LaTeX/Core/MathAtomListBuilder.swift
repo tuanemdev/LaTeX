@@ -1,17 +1,6 @@
-//
-//  Created by Mike Griebling on 2022-12-31.
-//  Translated from an Objective-C implementation by Kostub Deshmukh.
-//
-//  This software may be modified and distributed under the terms of the
-//  MIT license. See the LICENSE file for details.
-//
-
 import Foundation
 
-/** `MathAtomListBuilder` is a class for parsing LaTeX into an `MathAtomList` that
- can be rendered and processed mathematically.
- */
-struct MTEnvProperties {
+struct MathEnvProperties {
     var envName: String?
     var ended: Bool
     var numRows: Int
@@ -29,7 +18,7 @@ struct MTEnvProperties {
  The `code` in the `NSError` is one of the following indicating why the LaTeX string
  could not be parsed.
  */
-enum MTParseErrors:Int {
+enum MathParseErrors: Int {
     /// The braces { } do not match.
     case mismatchBraces = 1
     /// A command in the string is not recognized.
@@ -62,19 +51,17 @@ enum MTParseErrors:Int {
 
 let MTParseError = "ParseError"
 
-/** `MathAtomListBuilder` is a class for parsing LaTeX into an `MathAtomList` that
- can be rendered and processed mathematically.
- */
+/// Khởi tạo một MathAtomList từ một chuỗi LaTeX
 public struct MathAtomListBuilder {
     var string: String
     var currentCharIndex: String.Index
     var currentInnerAtom: MathInner?
-    var currentEnv: MTEnvProperties?
-    var currentFontStyle:MathFontStyle
-    var spacesAllowed:Bool
+    var currentEnv: MathEnvProperties?
+    var currentFontStyle: MathFontStyle
+    var spacesAllowed: Bool
     
     /** Contains any error that occurred during parsing. */
-    var error:NSError?
+    var error: NSError?
     
     // MARK: - Character-handling routines
     
@@ -137,9 +124,22 @@ public struct MathAtomListBuilder {
     }
     
     // MARK: - MathAtomList builder functions
+    /** Construct a math list from a given string. If there is an error while
+     constructing the string, this returns nil. The error is returned in the
+     `error` parameter.
+     */
+    static func build(fromString string: String, error: inout NSError?) -> MathAtomList? {
+        var builder = MathAtomListBuilder(string: string)
+        let output = builder.build()
+        if builder.error != nil {
+            error = builder.error
+            return nil
+        }
+        return output
+    }
     
     /// Builds a MathAtomList from the internal `string`. Returns nil if there is an error.
-    public mutating func build() -> MathAtomList? {
+    private mutating func build() -> MathAtomList? {
         let list = self.buildInternal(false)
         if self.hasCharacters && error == nil {
             self.setError(.mismatchBraces, message: "Mismatched braces: \(self.string)")
@@ -151,33 +151,7 @@ public struct MathAtomListBuilder {
         return list
     }
     
-    /** Construct a math list from a given string. If there is parse error, returns
-     nil. To retrieve the error use the function `MathAtomListBuilder.build(fromString:error:)`.
-     */
-    public static func build(fromString string: String) -> MathAtomList? {
-        var builder = MathAtomListBuilder(string: string)
-        return builder.build()
-    }
-    
-    /** Construct a math list from a given string. If there is an error while
-     constructing the string, this returns nil. The error is returned in the
-     `error` parameter.
-     */
-    public static func build(fromString string: String, error:inout NSError?) -> MathAtomList? {
-        var builder = MathAtomListBuilder(string: string)
-        let output = builder.build()
-        if builder.error != nil {
-            error = builder.error
-            return nil
-        }
-        return output
-    }
-    
-    public mutating func buildInternal(_ oneCharOnly: Bool) -> MathAtomList? {
-        self.buildInternal(oneCharOnly, stopChar: nil)
-    }
-    
-    public mutating func buildInternal(_ oneCharOnly: Bool, stopChar stop: Character?) -> MathAtomList? {
+    private mutating func buildInternal(_ oneCharOnly: Bool, stopChar stop: Character? = nil) -> MathAtomList? {
         let list = MathAtomList()
         assert(!(oneCharOnly && stop != nil), "Cannot set both oneCharOnly and stopChar.")
         var prevAtom: MathAtom? = nil
@@ -611,7 +585,7 @@ public struct MathAtomListBuilder {
             return nil;
         }
     }
-
+    
     mutating func readColor() -> String? {
         if !self.expectCharacter("{") {
             // We didn't find an opening brace, so no env found.
@@ -642,7 +616,7 @@ public struct MathAtomListBuilder {
         }
         return mutable;
     }
-
+    
     mutating func skipSpaces() {
         while self.hasCharacters {
             let ch = self.getNextCharacter().utf32Char
@@ -730,7 +704,7 @@ public struct MathAtomListBuilder {
         }
         return nil
     }
-
+    
     // Applies the modifier to the atom. Returns true if modifier applied.
     mutating func applyModifier(_ modifier:String, atom:MathAtom?) -> Bool {
         if modifier == "limits" {
@@ -754,8 +728,8 @@ public struct MathAtomListBuilder {
         }
         return false
     }
-
-    mutating func setError(_ code:MTParseErrors, message:String) {
+    
+    mutating func setError(_ code:MathParseErrors, message:String) {
         // Only record the first error.
         if error == nil {
             error = NSError(domain: MTParseError, code: code.rawValue, userInfo: [ NSLocalizedDescriptionKey : message ])
@@ -868,7 +842,7 @@ public struct MathAtomListBuilder {
         // Save the current env till an new one gets built.
         let oldEnv = self.currentEnv
         
-        currentEnv = MTEnvProperties(name: env)
+        currentEnv = MathEnvProperties(name: env)
         
         var currentRow = 0
         var currentCol = 0

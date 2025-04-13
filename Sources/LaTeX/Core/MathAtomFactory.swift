@@ -1,8 +1,9 @@
 import Foundation
 
 struct MathAtomFactory {
-    
-    static let aliases = [
+    /// Các ký tự LaTeX khác tên nhưng có ý nghĩa giống nhau, cùng biểu diễn một ký tự
+    /// Dùng để lấy `Tên thật` (value)  từ `Tên bí danh` (key)
+    static let symbolAliases: [String: String] = [
         "lnot": "neg",
         "land": "wedge",
         "lor": "vee",
@@ -19,38 +20,38 @@ struct MathAtomFactory {
     ]
     
     static let delimiters = [
-        "." : "",
-        "(" : "(",
-        ")" : ")",
-        "[" : "[",
-        "]" : "]",
-        "<" : "\u{2329}",
-        ">" : "\u{232A}",
-        "/" : "/",
-        "\\" : "\\",
-        "|" : "|",
-        "lgroup" : "\u{27EE}",
-        "rgroup" : "\u{27EF}",
-        "||" : "\u{2016}",
-        "Vert" : "\u{2016}",
-        "vert" : "|",
-        "uparrow" : "\u{2191}",
-        "downarrow" : "\u{2193}",
-        "updownarrow" : "\u{2195}",
-        "Uparrow" : "\u{21D1}",
-        "Downarrow" : "\u{21D3}",
-        "Updownarrow" : "\u{21D5}",
-        "backslash" : "\\",
-        "rangle" : "\u{232A}",
-        "langle" : "\u{2329}",
-        "rbrace" : "}",
-        "}" : "}",
-        "{" : "{",
-        "lbrace" : "{",
-        "lceil" : "\u{2308}",
-        "rceil" : "\u{2309}",
-        "lfloor" : "\u{230A}",
-        "rfloor" : "\u{230B}"
+        ".": "",
+        "(": "(",
+        ")": ")",
+        "[": "[",
+        "]": "]",
+        "<": "\u{2329}",
+        ">": "\u{232A}",
+        "/": "/",
+        "\\": "\\",
+        "|": "|",
+        "lgroup": "\u{27EE}",
+        "rgroup": "\u{27EF}",
+        "||": "\u{2016}",
+        "Vert": "\u{2016}",
+        "vert": "|",
+        "uparrow": "\u{2191}",
+        "downarrow": "\u{2193}",
+        "updownarrow": "\u{2195}",
+        "Uparrow": "\u{21D1}",
+        "Downarrow": "\u{21D3}",
+        "Updownarrow": "\u{21D5}",
+        "backslash": "\\",
+        "rangle": "\u{232A}",
+        "langle": "\u{2329}",
+        "rbrace": "}",
+        "}": "}",
+        "{": "{",
+        "lbrace": "{",
+        "lceil": "\u{2308}",
+        "rceil": "\u{2309}",
+        "lfloor": "\u{230A}",
+        "rfloor": "\u{230B}",
     ]
     
     static let delimValueToName: [String: String] = {
@@ -110,7 +111,6 @@ struct MathAtomFactory {
     
     nonisolated(unsafe) static var supportedLatexSymbols: [String: MathAtom] = [
         "square" : MathAtomFactory.placeholder(),
-        
         // Greek characters
         "alpha" : MathAtom(type: .variable, value: "\u{03B1}"),
         "beta" : MathAtom(type: .variable, value: "\u{03B2}"),
@@ -625,7 +625,7 @@ struct MathAtomFactory {
      */
     static func atom(forLatexSymbol name: String) -> MathAtom? {
         var name = name
-        if let canonicalName = aliases[name] {
+        if let canonicalName = symbolAliases[name] {
             name = canonicalName
         }
         if let atom = supportedLatexSymbols[name] {
@@ -653,8 +653,6 @@ struct MathAtomFactory {
      `MathAtomFactory.add(latexSymbol:"lcm", value:MathAtomFactory.operatorWithName("lcm", limits: false))` */
     static func add(latexSymbol name: String, value: MathAtom) {
         let _ = Self.textToLatexSymbolName
-        // above force textToLatexSymbolName to initialise first, _textToLatexSymbolName also initialized.
-        // protect lazily loading table in a multi-thread concurrent environment
         supportedLatexSymbols[name] = value
         textToLatexSymbolName[value.nucleus] = name
     }
@@ -792,7 +790,7 @@ struct MathAtomFactory {
                 if table.numColumns != 2 {
                     let message = "\(env) environment can only have 2 columns"
                     if error == nil {
-                        error = NSError(domain: MTParseError, code: MTParseErrors.invalidNumColumns.rawValue, userInfo: [NSLocalizedDescriptionKey:message])
+                        error = NSError(domain: MTParseError, code: MathParseErrors.invalidNumColumns.rawValue, userInfo: [NSLocalizedDescriptionKey:message])
                     }
                     return nil
                 }
@@ -816,7 +814,7 @@ struct MathAtomFactory {
                 if table.numColumns != 1 {
                     let message = "\(env) environment can only have 1 column"
                     if error == nil {
-                        error = NSError(domain: MTParseError, code: MTParseErrors.invalidNumColumns.rawValue, userInfo: [NSLocalizedDescriptionKey:message])
+                        error = NSError(domain: MTParseError, code: MathParseErrors.invalidNumColumns.rawValue, userInfo: [NSLocalizedDescriptionKey:message])
                     }
                     return nil
                 }
@@ -831,7 +829,7 @@ struct MathAtomFactory {
                 if table.numColumns != 3 {
                     let message = "\(env) environment can only have 3 columns"
                     if error == nil {
-                        error = NSError(domain: MTParseError, code: MTParseErrors.invalidNumColumns.rawValue, userInfo: [NSLocalizedDescriptionKey:message])
+                        error = NSError(domain: MTParseError, code: MathParseErrors.invalidNumColumns.rawValue, userInfo: [NSLocalizedDescriptionKey:message])
                     }
                     return nil
                 }
@@ -848,7 +846,7 @@ struct MathAtomFactory {
                 if table.numColumns != 2 {
                     let message = "cases environment can only have 2 columns"
                     if error == nil {
-                        error = NSError(domain: MTParseError, code: MTParseErrors.invalidNumColumns.rawValue, userInfo: [NSLocalizedDescriptionKey:message])
+                        error = NSError(domain: MTParseError, code: MathParseErrors.invalidNumColumns.rawValue, userInfo: [NSLocalizedDescriptionKey:message])
                     }
                     return nil
                 }
@@ -876,7 +874,7 @@ struct MathAtomFactory {
                 return inner
             } else {
                 let message = "Unknown environment \(env)"
-                error = NSError(domain: MTParseError, code: MTParseErrors.invalidEnv.rawValue, userInfo: [NSLocalizedDescriptionKey:message])
+                error = NSError(domain: MTParseError, code: MathParseErrors.invalidEnv.rawValue, userInfo: [NSLocalizedDescriptionKey:message])
                 return nil
             }
         }
