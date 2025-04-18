@@ -18,7 +18,7 @@ public class MathColorBox: MathAtom {
         copy.superScript = self.superScript?.deepCopy()
         copy.indexRange = self.indexRange
         copy.fontStyle = self.fontStyle
-        copy.fusedAtoms = self.fusedAtoms
+        copy.fusedAtoms = self.fusedAtoms.map { $0.deepCopy() }
         copy.colorString = self.colorString
         copy.innerList = self.innerList?.deepCopy()
         return copy

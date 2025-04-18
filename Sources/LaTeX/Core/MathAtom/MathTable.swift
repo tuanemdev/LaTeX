@@ -69,7 +69,7 @@ public class MathTable: MathAtom {
         copy.superScript = self.superScript?.deepCopy()
         copy.indexRange = self.indexRange
         copy.fontStyle = self.fontStyle
-        copy.fusedAtoms = self.fusedAtoms
+        copy.fusedAtoms = self.fusedAtoms.map { $0.deepCopy() }
         copy.alignments = self.alignments
         copy.interRowAdditionalSpacing = self.interRowAdditionalSpacing
         copy.interColumnSpacing = self.interColumnSpacing

@@ -17,9 +17,7 @@ public class MathAtomList {
     
     init?(_ list: MathAtomList?) {
         guard let list = list else { return nil }
-        for atom in list.atoms {
-            self.atoms.append(atom.deepCopy())
-        }
+        self.atoms = list.atoms.map { $0.deepCopy() }
     }
     
     /// Tạo một danh sách toán tử mới như một biểu thức cuối cùng và cập nhật các toán tử
@@ -98,9 +96,7 @@ public class MathAtomList {
 extension MathAtomList: NSCopying {
     public func copy(with zone: NSZone? = nil) -> Any {
         let copy = MathAtomList()
-        for atom in atoms {
-            copy.atoms.append(atom.deepCopy())
-        }
+        copy.atoms = self.atoms.map { $0.deepCopy() }
         return copy
     }
     

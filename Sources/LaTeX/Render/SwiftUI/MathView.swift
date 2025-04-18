@@ -10,6 +10,8 @@ public struct MathView: UIViewRepresentable {
     public func makeUIView(context: Context) -> MathLabel {
         let mathLabel = MathLabel()
         mathLabel.labelMode = .display
+        mathLabel.setContentHuggingPriority(.defaultHigh, for: .vertical)
+        mathLabel.setContentHuggingPriority(.defaultHigh, for: .horizontal)
         return mathLabel
     }
     

@@ -161,8 +161,9 @@ public class MathLabel: LaTeXView {
         self.setNeedsDisplay()
     }
     
-    func _sizeThatFits(_ size: CGSize) -> CGSize {
-        guard let displayList else { return size }
+    func _sizeThatFits() -> CGSize {
+        _layoutSubviews()
+        guard let displayList else { return .zero }
         let width = displayList.width + contentInsets.left + contentInsets.right
         let height = displayList.ascent + displayList.descent + contentInsets.top + contentInsets.bottom
         return CGSize(width: width, height: height)
@@ -178,7 +179,7 @@ public class MathLabel: LaTeXView {
     }
     
     override public var fittingSize: CGSize {
-        _sizeThatFits(CGSizeZero)
+        _sizeThatFits()
     }
     
     override public var isFlipped: Bool { false }
@@ -191,7 +192,7 @@ public class MathLabel: LaTeXView {
     
     #if canImport(UIKit)
     override public var intrinsicContentSize: CGSize {
-        _sizeThatFits(CGSizeZero)
+        _sizeThatFits()
     }
     
     override public func layoutSubviews() {

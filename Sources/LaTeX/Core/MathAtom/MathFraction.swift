@@ -28,7 +28,7 @@ public class MathFraction: MathAtom {
         copy.superScript = self.superScript?.deepCopy()
         copy.indexRange = self.indexRange
         copy.fontStyle = self.fontStyle
-        copy.fusedAtoms = self.fusedAtoms
+        copy.fusedAtoms = self.fusedAtoms.map { $0.deepCopy() }
         copy.leftDelimiter = self.leftDelimiter
         copy.rightDelimiter = self.rightDelimiter
         copy.numerator = self.numerator?.deepCopy()

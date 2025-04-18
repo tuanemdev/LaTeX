@@ -50,7 +50,7 @@ public class MathAtom {
     
     /// Bản sao chép hoàn thiện
     public var finalized: MathAtom {
-        let finalized: MathAtom = self.deepCopy()
+        let finalized = self.deepCopy()
         finalized.superScript = finalized.superScript?.finalized
         finalized.subScript = finalized.subScript?.finalized
         return finalized
@@ -58,19 +58,14 @@ public class MathAtom {
     
     /// Kết hợp toán tử này với một toán tử khác
     func fuse(with atom: MathAtom) {
-        assert(self.subScript == nil, "Cannot fuse into an atom which has a subscript: \(self)");
-        assert(self.superScript == nil, "Cannot fuse into an atom which has a superscript: \(self)");
-        assert(atom.type == self.type, "Only atoms of the same type can be fused. \(self), \(atom)");
-        
+        assert(self.subScript == nil, "Cannot fuse into an atom which has a subscript: \(self)")
+        assert(self.superScript == nil, "Cannot fuse into an atom which has a superscript: \(self)")
+        assert(atom.type == self.type, "Only atoms of the same type can be fused. \(self), \(atom)")
+
         if self.fusedAtoms.isEmpty {
             self.fusedAtoms.append(self.deepCopy())
         }
-        if !atom.fusedAtoms.isEmpty {
-            self.fusedAtoms.append(contentsOf: atom.fusedAtoms)
-        } else {
-            self.fusedAtoms.append(atom)
-        }
-        
+        self.fusedAtoms.append(contentsOf: atom.fusedAtoms.isEmpty ? [atom] : atom.fusedAtoms)
         self.nucleus += atom.nucleus
         self.indexRange.length += atom.indexRange.length
         self.superScript = atom.superScript
@@ -89,11 +84,11 @@ extension MathAtom: NSCopying {
         let copy = MathAtom()
         copy.type = self.type
         copy.nucleus = self.nucleus
-        copy.subScript = MathAtomList(self.subScript)
-        copy.superScript = MathAtomList(self.superScript)
+        copy.subScript = self.subScript?.deepCopy()
+        copy.superScript = self.superScript?.deepCopy()
         copy.indexRange = self.indexRange
         copy.fontStyle = self.fontStyle
-        copy.fusedAtoms = self.fusedAtoms
+        copy.fusedAtoms = self.fusedAtoms.map { $0.deepCopy() }
         return copy
     }
     

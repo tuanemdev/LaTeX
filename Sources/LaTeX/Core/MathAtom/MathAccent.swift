@@ -24,11 +24,11 @@ public class MathAccent: MathAtom {
         let copy = MathAccent()
         copy.type = self.type
         copy.nucleus = self.nucleus
-        copy.subScript = MathAtomList(self.subScript)
-        copy.superScript = MathAtomList(self.superScript)
+        copy.subScript = self.subScript?.deepCopy()
+        copy.superScript = self.superScript?.deepCopy()
         copy.indexRange = self.indexRange
         copy.fontStyle = self.fontStyle
-        copy.fusedAtoms = self.fusedAtoms
+        copy.fusedAtoms = self.fusedAtoms.map { $0.deepCopy() }
         copy.innerList = self.innerList?.deepCopy()
         return copy
     }
