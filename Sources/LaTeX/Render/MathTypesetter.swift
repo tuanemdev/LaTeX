@@ -150,6 +150,8 @@ func getCaligraphic(_ ch: Character) -> UTF32Char {
         return 0x210B;   // Script H (hamiltonian)
     case "I":
         return 0x2110;   // Script I
+    case "J":
+        return 0x2111;   // Script J (imaginary)
     case "L":
         return 0x2112;   // Script L (laplace)
     case "M":

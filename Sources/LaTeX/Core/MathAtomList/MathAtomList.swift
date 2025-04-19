@@ -31,7 +31,8 @@ public class MathAtomList {
         for atom in atoms {
             let newNode = atom.finalized
             
-            if NSEqualRanges(zeroRange, atom.indexRange) {
+            // Replace NSEqualRanges with direct comparison
+            if atom.indexRange.location == zeroRange.location && atom.indexRange.length == zeroRange.length {
                 let index = prevNode == nil ? 0 : prevNode!.indexRange.location + prevNode!.indexRange.length
                 newNode.indexRange = NSMakeRange(index, 1)
             }

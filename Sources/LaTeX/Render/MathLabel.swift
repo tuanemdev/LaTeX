@@ -1,37 +1,49 @@
 import Foundation
 import CoreText
+#if canImport(AppKit)
+import AppKit
+#endif
+#if canImport(UIKit)
+import UIKit
+#endif
 
 // MARK: - MathLabel
 @IBDesignable
 public class MathLabel: LaTeXView {
     /// Danh sách các toán tử trong công thức toán học
     private var mathAtomList: MathAtomList?
-    /// Phần view render nội bộ cho các toán tử
+    /// Danh sách các toán tử hỗ trợ cho việc hiển thị
     private var displayList: MathAtomListDisplay?
+    
+    /// Dùng để hiển thị nếu có lỗi trong khi phân tích cú pháp LaTeX
+    private let errorLabel: LaTeXLabel = LaTeXLabel()
+    public var displayErrorInline = true
     
     /// Mã LaTeX
     @IBInspectable
     public var latex: String = "" {
         didSet {
-            errorMessage = nil
+            self.errorLabel.text = ""
             do {
                 mathAtomList = try MathAtomListBuilder.build(fromString: latex)
                 self.errorLabel.isHidden = true
             } catch {
                 mathAtomList = nil
-                errorMessage = error
-                self.errorLabel.text = errorMessage?.localizedDescription
-                self.errorLabel.frame = self.bounds
+                self.errorLabel.text = error.localizedDescription
                 self.errorLabel.isHidden = !displayErrorInline
             }
             self.setNeedsLayout()
         }
     }
     
-    /// Dùng để hiển thị lỗi nếu có khi phân tích cú pháp LaTeX
-    private let errorLabel: LaTeXLabel = LaTeXLabel()
-    private var errorMessage: MathParseError?
-    public var displayErrorInline = true
+    /// Màu chữ
+    @IBInspectable
+    public var textColor: LaTeXColor = LaTeXColor.black {
+        didSet {
+            self.displayList?.textColor = textColor
+            self.setNeedsDisplay()
+        }
+    }
     
     /// Font chữ sử dụng để render công thức toán học
     public var mathFont: MathFont = MathFontType.defaultMathFont {
@@ -48,15 +60,6 @@ public class MathLabel: LaTeXView {
         }
     }
     
-    /// Màu chữ
-    @IBInspectable
-    public var textColor: LaTeXColor = LaTeXColor.black {
-        didSet {
-            self.displayList?.textColor = textColor
-            self.setNeedsDisplay()
-        }
-    }
-    
     @IBInspectable
     public var contentInsets: LaTeXEdgeInsets = zeroInsets {
         didSet {
@@ -64,16 +67,16 @@ public class MathLabel: LaTeXView {
         }
     }
     
-    public var labelMode: MathMode = .display {
+    public var mathMode: MathMode = .display {
         didSet {
             self.setNeedsLayout()
         }
     }
     
     private var currentStyle: LineStyle {
-        switch labelMode {
-            case .display: return .display
-            case .inline: return .text
+        switch mathMode {
+        case .display:  .display
+        case .inline:   .text
         }
     }
     
@@ -94,18 +97,54 @@ public class MathLabel: LaTeXView {
     }
     
     func initCommon() {
-        #if os(macOS)
+        #if canImport(AppKit)
         self.layer?.isGeometryFlipped = true
-        #else
-        self.layer.isGeometryFlipped = true
+        #endif
+        #if canImport(UIKit)
+        self.layer.isGeometryFlipped = false
         #endif
         self.backgroundColor = LaTeXColor.clear
         self.errorLabel.textColor = LaTeXColor.red
         self.addSubview(errorLabel)
+        self.errorLabel.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            errorLabel.leadingAnchor.constraint(equalTo: self.leadingAnchor),
+            errorLabel.trailingAnchor.constraint(equalTo: self.trailingAnchor),
+            errorLabel.topAnchor.constraint(equalTo: self.topAnchor),
+            errorLabel.bottomAnchor.constraint(equalTo: self.bottomAnchor)
+        ])
     }
     
-    override public func draw(_ dirtyRect: LaTeXRect) {
-        super.draw(dirtyRect)
+    private func createMathDisplayList() -> MathAtomListDisplay? {
+        guard let mathAtomList,
+              let displayList = MTTypesetter.createLineForMathAtomList(mathAtomList, font: mathFont, style: currentStyle)
+        else { return nil }
+        
+        displayList.textColor = textColor
+        var textX = CGFloat(0)
+        switch self.textAlignment {
+        case .left:
+            textX = contentInsets.left
+        case .center:
+            textX = (bounds.size.width - contentInsets.left - contentInsets.right - displayList.width) / 2 + contentInsets.left
+        case .right:
+            textX = bounds.size.width - displayList.width - contentInsets.right
+        }
+        let availableHeight = bounds.size.height - contentInsets.bottom - contentInsets.top
+        
+        // center things vertically
+        var height = displayList.ascent + displayList.descent
+        if height < mathFontSize / 2 {
+            height = mathFontSize / 2
+        }
+        let textY = (availableHeight - height) / 2 + displayList.descent + contentInsets.bottom
+        displayList.position = CGPointMake(textX, textY)
+        
+        return displayList
+    }
+    
+    override public func draw(_ rect: LaTeXRect) {
+        super.draw(rect)
         guard let displayList,
               let context = currentContext
         else { return }
@@ -115,39 +154,20 @@ public class MathLabel: LaTeXView {
     }
     
     func _layoutSubviews() {
-        if let mathAtomList,
-           let displayList = MTTypesetter.createLineForMathAtomList(mathAtomList, font: mathFont, style: currentStyle) {
-            displayList.textColor = textColor
-            var textX = CGFloat(0)
-            switch self.textAlignment {
-            case .left:
-                textX = contentInsets.left
-            case .center:
-                textX = (bounds.size.width - contentInsets.left - contentInsets.right - displayList.width) / 2 + contentInsets.left
-            case .right:
-                textX = bounds.size.width - displayList.width - contentInsets.right
-            }
-            let availableHeight = bounds.size.height - contentInsets.bottom - contentInsets.top
-            
-            // center things vertically
-            var height = displayList.ascent + displayList.descent
-            if height < mathFontSize / 2 {
-                height = mathFontSize / 2
-            }
-            let textY = (availableHeight - height) / 2 + displayList.descent + contentInsets.bottom
-            displayList.position = CGPointMake(textX, textY)
-            
-            self.displayList = displayList
-        } else {
-            displayList = nil
-        }
+        self.displayList = createMathDisplayList()
         self.invalidateIntrinsicContentSize()
-        errorLabel.frame = self.bounds
         self.setNeedsDisplay()
     }
     
     func _sizeThatFits() -> CGSize {
-        guard let displayList else { return .zero }
+        guard let displayList else {
+            #if canImport(AppKit)
+            return errorLabel.fittingSize
+            #endif
+            #if canImport(UIKit)
+            return errorLabel.intrinsicContentSize
+            #endif
+        }
         let width = displayList.width + contentInsets.left + contentInsets.right
         let height = displayList.ascent + displayList.descent + contentInsets.top + contentInsets.bottom
         return CGSize(width: width, height: height)

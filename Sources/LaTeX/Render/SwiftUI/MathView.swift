@@ -1,6 +1,6 @@
 import SwiftUI
 
-public struct MathView: UIViewRepresentable {
+public struct MathView {
     let latex: String
     var mathFont: MathFont? = MathFontType.defaultMathFont
     var mathFontSize: CGFloat = 20
@@ -12,7 +12,10 @@ public struct MathView: UIViewRepresentable {
     public init(latex: String) {
         self.latex = latex
     }
-    
+}
+
+#if canImport(UIKit)
+extension MathView: UIViewRepresentable {
     public func makeUIView(context: Context) -> MathLabel {
         let mathLabel = MathLabel()
         mathLabel.setContentHuggingPriority(.defaultHigh, for: .vertical)
@@ -24,6 +27,22 @@ public struct MathView: UIViewRepresentable {
         uiView.latex = latex
     }
 }
+#endif
+
+#if canImport(AppKit)
+extension MathView: NSViewRepresentable {
+    public func makeNSView(context: Context) -> MathLabel {
+        let mathLabel = MathLabel()
+        mathLabel.setContentHuggingPriority(.defaultHigh, for: .vertical)
+        mathLabel.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+        return mathLabel
+    }
+    
+    public func updateNSView(_ nsView: MathLabel, context: Context) {
+        nsView.latex = latex
+    }
+}
+#endif
 
 // MARK: - MathView Modifiers
 public extension MathView {

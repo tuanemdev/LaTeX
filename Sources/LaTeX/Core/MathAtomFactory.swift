@@ -1,23 +1,7 @@
 import Foundation
 
 struct MathAtomFactory {
-    /// Các ký tự LaTeX khác tên nhưng có ý nghĩa giống nhau, cùng biểu diễn một ký tự
-    /// Dùng để lấy `Tên thật` (value)  từ `Tên bí danh` (key)
-    static let symbolAliases: [String: String] = [
-        "lnot": "neg",
-        "land": "wedge",
-        "lor": "vee",
-        "ne": "neq",
-        "le": "leq",
-        "ge": "geq",
-        "lbrace": "{",
-        "rbrace": "}",
-        "Vert": "|",
-        "gets": "leftarrow",
-        "to": "rightarrow",
-        "iff": "Longleftrightarrow",
-        "AA": "angstrom"
-    ]
+    // Removing the symbolAliases dictionary
     
     static let delimiters = [
         ".": "",
@@ -54,23 +38,6 @@ struct MathAtomFactory {
         "rfloor": "\u{230B}",
     ]
     
-    static let delimValueToName: [String: String] = {
-        var output = [String: String]()
-        for (key, value) in Self.delimiters {
-            if let existingValue = output[value] {
-                if key.count > existingValue.count {
-                    continue
-                } else if key.count == existingValue.count {
-                    if key.compare(existingValue) == .orderedDescending {
-                        continue
-                    }
-                }
-            }
-            output[value] = key
-        }
-        return output
-    }()
-    
     static let accents = [
         "grave" :  "\u{0300}",
         "acute" :  "\u{0301}",
@@ -85,29 +52,6 @@ struct MathAtomFactory {
         "widehat" :  "\u{0302}",
         "widetilde" :  "\u{0303}"
     ]
-    
-    static var accentValueToName: [String: String] {
-            var output = [String: String]()
-            
-            for (key, value) in Self.accents {
-                if let existingValue = output[value] {
-                    if key.count > existingValue.count {
-                        continue
-                    } else if key.count == existingValue.count {
-                        if key.compare(existingValue) == .orderedDescending {
-                            continue
-                        }
-                    }
-                }
-                output[value] = key
-            }
-        return output
-    }
-    
-    static var supportedLatexSymbolNames: [String] {
-        let commands = MathAtomFactory.supportedLatexSymbols
-        return commands.keys.map { String($0) }
-    }
     
     nonisolated(unsafe) static let supportedLatexSymbols: [String: MathAtom] = [
         "square" : MathAtomFactory.placeholder(),
@@ -381,6 +325,21 @@ struct MathAtomFactory {
         "textstyle" : MathStyle(style: .text),
         "scriptstyle" : MathStyle(style: .script),
         "scriptscriptstyle" : MathStyle(style: .scriptOfScript),
+        
+        // Aliases - defined directly as key-value pairs
+        "lnot": MathAtom(type: .ordinary, value: "\u{00AC}"), // same as "neg"
+        "land": MathAtom(type: .binaryOperator, value: "\u{2227}"), // same as "wedge"
+        "lor": MathAtom(type: .binaryOperator, value: "\u{2228}"), // same as "vee"
+        "ne": MathAtom(type: .relation, value: UnicodeSymbol.notEqual), // same as "neq"
+        "le": MathAtom(type: .relation, value: UnicodeSymbol.lessEqual), // same as "leq"
+        "ge": MathAtom(type: .relation, value: UnicodeSymbol.greaterEqual), // same as "geq"
+        "lbrace": MathAtom(type: .open, value: "{"), // same as "{"
+        "rbrace": MathAtom(type: .close, value: "}"), // same as "}"
+        "Vert": MathAtom(type: .ordinary, value: "\u{2016}"), // same as "|"
+        "gets": MathAtom(type: .relation, value: "\u{2190}"), // same as "leftarrow"
+        "to": MathAtom(type: .relation, value: "\u{2192}"), // same as "rightarrow"
+        "iff": MathAtom(type: .relation, value: "\u{27FA}"), // same as "Longleftrightarrow"
+        "AA": MathAtom(type: .ordinary, value: "\u{00C5}"), // same as "angstrom"
     ]
     
     static let supportedAccentedCharacters: [Character: (String, String)] = [
@@ -599,10 +558,7 @@ struct MathAtomFactory {
      If the latex symbol is unknown this will return nil. This supports LaTeX aliases as well.
      */
     static func atom(forLatexSymbol name: String) -> MathAtom? {
-        var name = name
-        if let canonicalName = symbolAliases[name] {
-            name = canonicalName
-        }
+        // We no longer need to check symbolAliases since all aliases are now directly in supportedLatexSymbols
         if let atom = supportedLatexSymbols[name] {
             return atom.deepCopy()
         }
@@ -626,12 +582,6 @@ struct MathAtomFactory {
         return nil
     }
     
-    /** Returns the accent name for the given accent. This is the reverse of the above
-     function. */
-    static func accentName(_ accent: MathAccent) -> String? {
-        accentValueToName[accent.nucleus]
-    }
-    
     /** Creates a new boundary atom for the given delimiter name. If the delimiter name
      is not recognized it returns nil. A delimiter name can be a single character such
      as '(' or a latex command such as 'uparrow'.
@@ -643,16 +593,6 @@ struct MathAtomFactory {
             return MathAtom(type: .boundary, value: delimValue)
         }
         return nil
-    }
-    
-    /** Returns the delimiter name for a boundary atom. This is a reverse of the above function.
-     If the atom is not a boundary atom or if the delimiter value is unknown this returns `nil`.
-     @note This is not an exact reverse of the above function. Some delimiters have two names (e.g.
-     `<` and `langle`) and this function always returns the shorter name.
-     */
-    static func getDelimiterName(of boundary: MathAtom) -> String? {
-        guard boundary.type == .boundary else { return nil }
-        return Self.delimValueToName[boundary.nucleus]
     }
     
     /** Returns a fraction with the given numerator and denominator. */
