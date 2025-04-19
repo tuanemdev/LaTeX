@@ -35,7 +35,6 @@ public class MathLabel: LaTeXView {
             } else {
                 self.errorLabel.isHidden = true
             }
-            self.invalidateIntrinsicContentSize()
             self.setNeedsLayout()
         }
     }
@@ -48,7 +47,6 @@ public class MathLabel: LaTeXView {
     /// Font chữ sử dụng để render công thức toán học
     public var mathFont: MathFont? = MathFontType.defaultMathFont {
         didSet {
-            self.invalidateIntrinsicContentSize()
             self.setNeedsLayout()
         }
     }
@@ -73,14 +71,12 @@ public class MathLabel: LaTeXView {
     @IBInspectable
     public var contentInsets: LaTeXEdgeInsets = zeroInsets {
         didSet {
-            self.invalidateIntrinsicContentSize()
             self.setNeedsLayout()
         }
     }
     
     public var labelMode: MathLabelMode = .display {
         didSet {
-            self.invalidateIntrinsicContentSize()
             self.setNeedsLayout()
         }
     }
@@ -94,7 +90,6 @@ public class MathLabel: LaTeXView {
     
     public var textAlignment: TextAlignment = .left {
         didSet {
-            self.invalidateIntrinsicContentSize()
             self.setNeedsLayout()
         }
     }
@@ -157,12 +152,12 @@ public class MathLabel: LaTeXView {
         } else {
             displayList = nil
         }
+        self.invalidateIntrinsicContentSize()
         errorLabel.frame = self.bounds
         self.setNeedsDisplay()
     }
     
     func _sizeThatFits() -> CGSize {
-        _layoutSubviews()
         guard let displayList else { return .zero }
         let width = displayList.width + contentInsets.left + contentInsets.right
         let height = displayList.ascent + displayList.descent + contentInsets.top + contentInsets.bottom
