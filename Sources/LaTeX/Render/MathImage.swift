@@ -41,7 +41,7 @@ extension MathImage {
         CGSize(width: displayList.width + contentInsets.left + contentInsets.right,
                height: displayList.ascent + displayList.descent + contentInsets.top + contentInsets.bottom)
     }
-    public mutating func asImage() -> (NSError?, LaTeXImage?) {
+    public mutating func asImage() -> (MathParseError?, LaTeXImage?) {
         func layoutImage(size: CGSize, displayList: MathAtomListDisplay) {
             var textX = CGFloat(0)
             switch self.textAlignment {
@@ -60,13 +60,12 @@ extension MathImage {
             displayList.position = CGPoint(x: textX, y: textY)
         }
         
-        var error: NSError?
         let MathFont: MathFont = MathFont(name: "latinmodern-math", size: fontSize)
 
         do {
             let MathAtomList = try MathAtomListBuilder.build(fromString: latex)
             guard let displayList = MTTypesetter.createLineForMathAtomList(MathAtomList, font: MathFont, style: currentStyle) else {
-                return (error, nil)
+                return (nil, nil)
             }
             
             intrinsicContentSize = intrinsicContentSize(displayList)
@@ -95,11 +94,7 @@ extension MathImage {
                 }
                 return (nil, image)
             #endif
-        } catch let err as MathParseError {
-            error = err as NSError
-            return (error, nil)
-        } catch let err {
-            error = err as NSError
+        } catch {
             return (error, nil)
         }
     }

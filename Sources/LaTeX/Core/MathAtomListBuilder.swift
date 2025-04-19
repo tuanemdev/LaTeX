@@ -15,7 +15,7 @@ struct MathEnvProperties {
 /**
  The error encountered when parsing a LaTeX string.
  */
-enum MathParseError: Error, CustomStringConvertible {
+public enum MathParseError: Error, CustomStringConvertible {
     /// The braces { } do not match.
     case mismatchBraces(String)
     /// A command in the string is not recognized.
@@ -45,7 +45,7 @@ enum MathParseError: Error, CustomStringConvertible {
     /// Limit control applied incorrectly
     case invalidLimits(String)
     
-    var description: String {
+    public var description: String {
         switch self {
         case .mismatchBraces(let msg),
              .invalidCommand(let msg),
@@ -123,13 +123,13 @@ public struct MathAtomListBuilder {
     }
     
     // MARK: - MathAtomList builder functions
-    static func build(fromString string: String) throws -> MathAtomList {
+    static func build(fromString string: String) throws(MathParseError) -> MathAtomList {
         var builder = MathAtomListBuilder(string: string)
         return try builder.build()
     }
     
     /// Builds a MathAtomList from the internal `string`.
-    private mutating func build() throws -> MathAtomList {
+    private mutating func build() throws(MathParseError) -> MathAtomList {
         let list = try self.buildInternal(false)
         if self.hasCharacters {
             throw MathParseError.mismatchBraces("Mismatched braces: \(self.string)")
@@ -137,7 +137,7 @@ public struct MathAtomListBuilder {
         return list
     }
     
-    private mutating func buildInternal(_ oneCharOnly: Bool, stopChar stop: Character? = nil) throws -> MathAtomList {
+    private mutating func buildInternal(_ oneCharOnly: Bool, stopChar stop: Character? = nil) throws(MathParseError) -> MathAtomList {
         let list = MathAtomList()
         assert(!(oneCharOnly && stop != nil), "Cannot set both oneCharOnly and stopChar.")
         var prevAtom: MathAtom? = nil
@@ -270,7 +270,7 @@ public struct MathAtomListBuilder {
         return list
     }
     
-    mutating func atomForCommand(_ command: String) throws -> MathAtom {
+    mutating func atomForCommand(_ command: String) throws(MathParseError) -> MathAtom {
         if let atom = MathAtomFactory.atom(forLatexSymbol: command) {
             return atom
         }
@@ -360,7 +360,7 @@ public struct MathAtomListBuilder {
         }
     }
     
-    mutating func readColor() throws -> String {
+    mutating func readColor() throws(MathParseError) -> String {
         if !self.expectCharacter("{") {
             // We didn't find an opening brace, so no env found.
             throw MathParseError.characterNotFound("Missing {")
@@ -412,7 +412,7 @@ public struct MathAtomListBuilder {
         ]
     }
     
-    mutating func stopCommand(_ command: String, list: MathAtomList, stopChar: Character?) throws -> MathAtomList? {
+    mutating func stopCommand(_ command: String, list: MathAtomList, stopChar: Character?) throws(MathParseError) -> MathAtomList? {
         if command == "right" {
             if currentInnerAtom == nil {
                 throw MathParseError.missingLeft("Missing \\left")
@@ -462,7 +462,7 @@ public struct MathAtomListBuilder {
     }
     
     // Applies the modifier to the atom. Returns true if modifier applied.
-    mutating func applyModifier(_ modifier: String, atom: MathAtom?) throws -> Bool {
+    mutating func applyModifier(_ modifier: String, atom: MathAtom?) throws(MathParseError) -> Bool {
         if modifier == "limits" {
             if atom?.type != .largeOperator {
                 throw MathParseError.invalidLimits("Limits can only be applied to an operator.")
@@ -483,7 +483,7 @@ public struct MathAtomListBuilder {
         return false
     }
     
-    mutating func readEnvironment() throws -> String {
+    mutating func readEnvironment() throws(MathParseError) -> String {
         if !self.expectCharacter("{") {
             // We didn't find an opening brace, so no env found.
             throw MathParseError.characterNotFound("Missing {")
@@ -503,7 +503,7 @@ public struct MathAtomListBuilder {
         assert(ch >= "\u{21}" && ch <= "\u{7E}", "Expected non-space character \(ch)")
     }
     
-    mutating func buildTable(env: String?, firstList: MathAtomList?, isRow: Bool) throws -> MathAtom {
+    mutating func buildTable(env: String?, firstList: MathAtomList?, isRow: Bool) throws(MathParseError) -> MathAtom {
         // Save the current env till an new one gets built.
         let oldEnv = self.currentEnv
         
@@ -546,7 +546,7 @@ public struct MathAtomListBuilder {
         return table
     }
     
-    mutating func getBoundaryAtom(_ delimiterType: String) throws -> MathAtom {
+    mutating func getBoundaryAtom(_ delimiterType: String) throws(MathParseError) -> MathAtom {
         let delim = try self.readDelimiter()
         guard let boundary = MathAtomFactory.boundary(forDelimiter: delim) else {
             throw MathParseError.invalidDelimiter("Invalid delimiter for \(delimiterType): \(delim)")
@@ -554,7 +554,7 @@ public struct MathAtomListBuilder {
         return boundary
     }
     
-    mutating func readDelimiter() throws -> String {
+    mutating func readDelimiter() throws(MathParseError) -> String {
         self.skipSpaces()
         while self.hasCharacters {
             let char = self.getNextCharacter()

@@ -17,15 +17,9 @@ public class MathLabel: LaTeXView {
             do {
                 mathAtomList = try MathAtomListBuilder.build(fromString: latex)
                 self.errorLabel.isHidden = true
-            } catch let error as MathParseError {
-                mathAtomList = nil
-                errorMessage = error as NSError
-                self.errorLabel.text = errorMessage?.localizedDescription
-                self.errorLabel.frame = self.bounds
-                self.errorLabel.isHidden = !displayErrorInline
             } catch {
                 mathAtomList = nil
-                errorMessage = error as NSError
+                errorMessage = error
                 self.errorLabel.text = errorMessage?.localizedDescription
                 self.errorLabel.frame = self.bounds
                 self.errorLabel.isHidden = !displayErrorInline
@@ -36,7 +30,7 @@ public class MathLabel: LaTeXView {
     
     /// Dùng để hiển thị lỗi nếu có khi phân tích cú pháp LaTeX
     private let errorLabel: LaTeXLabel = LaTeXLabel()
-    private var errorMessage: NSError?
+    private var errorMessage: MathParseError?
     public var displayErrorInline = true
     
     /// Font chữ sử dụng để render công thức toán học

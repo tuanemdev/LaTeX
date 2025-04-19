@@ -109,7 +109,7 @@ struct MathAtomFactory {
         return commands.keys.map { String($0) }
     }
     
-    static let supportedLatexSymbols: [String: MathAtom] = [
+    nonisolated(unsafe) static let supportedLatexSymbols: [String: MathAtom] = [
         "square" : MathAtomFactory.placeholder(),
         // Greek characters
         "alpha" : MathAtom(type: .variable, value: "\u{03B1}"),
@@ -698,7 +698,7 @@ struct MathAtomFactory {
      @note The reason this function returns a `MathAtom` and not a `MTMathTable` is because some
      matrix environments are have builtin delimiters added to the table and hence are returned as inner atoms.
      */
-    static func table(withEnvironment env: String?, rows: [[MathAtomList]]) throws -> MathAtom {
+    static func table(withEnvironment env: String?, rows: [[MathAtomList]]) throws(MathParseError) -> MathAtom {
         let table = MathTable(environment: env)
         
         for i in 0..<rows.count {
