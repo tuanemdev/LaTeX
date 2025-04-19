@@ -1,19 +1,7 @@
 import Foundation
 import CoreText
 
-public enum MathLabelMode {
-    /// Equivalent to $$ in TeX
-    case display
-    /// Equivalent to $ in TeX.
-    case text
-}
-
-public enum TextAlignment {
-    case left
-    case center
-    case right
-}
-
+// MARK: - MathLabel
 @IBDesignable
 public class MathLabel: LaTeXView {
     /// Danh sách các toán tử trong công thức toán học
@@ -26,14 +14,21 @@ public class MathLabel: LaTeXView {
     public var latex: String = "" {
         didSet {
             errorMessage = nil
-            mathAtomList = MathAtomListBuilder.build(fromString: latex, error: &errorMessage)
-            if let errorMessage {
+            do {
+                mathAtomList = try MathAtomListBuilder.build(fromString: latex)
+                self.errorLabel.isHidden = true
+            } catch let error as MathParseError {
                 mathAtomList = nil
-                self.errorLabel.text = errorMessage.localizedDescription
+                errorMessage = error as NSError
+                self.errorLabel.text = errorMessage?.localizedDescription
                 self.errorLabel.frame = self.bounds
                 self.errorLabel.isHidden = !displayErrorInline
-            } else {
-                self.errorLabel.isHidden = true
+            } catch {
+                mathAtomList = nil
+                errorMessage = error as NSError
+                self.errorLabel.text = errorMessage?.localizedDescription
+                self.errorLabel.frame = self.bounds
+                self.errorLabel.isHidden = !displayErrorInline
             }
             self.setNeedsLayout()
         }
@@ -45,7 +40,7 @@ public class MathLabel: LaTeXView {
     public var displayErrorInline = true
     
     /// Font chữ sử dụng để render công thức toán học
-    public var mathFont: MathFont? = MathFontType.defaultMathFont {
+    public var mathFont: MathFont = MathFontType.defaultMathFont {
         didSet {
             self.setNeedsLayout()
         }
@@ -55,7 +50,7 @@ public class MathLabel: LaTeXView {
     @IBInspectable
     public var mathFontSize: CGFloat = 20 {
         didSet {
-            mathFont = mathFont?.copy(withSize: mathFontSize)
+            mathFont = mathFont.copy(withSize: mathFontSize)
         }
     }
     
@@ -75,7 +70,7 @@ public class MathLabel: LaTeXView {
         }
     }
     
-    public var labelMode: MathLabelMode = .display {
+    public var labelMode: MathMode = .display {
         didSet {
             self.setNeedsLayout()
         }
@@ -84,11 +79,11 @@ public class MathLabel: LaTeXView {
     private var currentStyle: LineStyle {
         switch labelMode {
             case .display: return .display
-            case .text: return .text
+            case .inline: return .text
         }
     }
     
-    public var textAlignment: TextAlignment = .left {
+    public var textAlignment: MathAlignment = .left {
         didSet {
             self.setNeedsLayout()
         }
@@ -194,4 +189,32 @@ public class MathLabel: LaTeXView {
         _layoutSubviews()
     }
     #endif
+}
+
+// MARK: - Inner Data Structures
+extension MathLabel {
+    /// Các chế độ hiển thị toán học
+    public enum MathMode {
+        /// `Inline Math Mode` - Chế độ toán học nội dòng
+        /// Tương đương với `$` trong TeX.
+        /// Công thức toán học được đặt trong cùng một dòng với văn bản xung quanh. Nó được coi như một phần của đoạn văn bản.
+        /// TeX sẽ cố gắng định dạng công thức sao cho nó không làm ảnh hưởng quá nhiều đến chiều cao của dòng văn bản.
+        case inline
+        
+        /// `Display Math Mode` - Chế độ toán học hiển thị riêng
+        /// Tương đương với `$$` trong TeX.
+        /// Công thức toán học được đặt trên một dòng riêng biệt, tách biệt khỏi văn bản xung quanh
+        /// TeX sử dụng định dạng đầy đủ, đẹp mắt hơn cho các ký hiệu.
+        case display
+    }
+    
+    /// Các kiểu căn chỉnh nội dung cho công thức toán học
+    public enum MathAlignment {
+        /// Căn trái
+        case left
+        /// Căn giữa
+        case center
+        /// Căn phải
+        case right
+    }
 }

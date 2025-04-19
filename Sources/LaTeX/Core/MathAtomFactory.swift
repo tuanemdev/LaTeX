@@ -109,7 +109,7 @@ struct MathAtomFactory {
         return commands.keys.map { String($0) }
     }
     
-    nonisolated(unsafe) static var supportedLatexSymbols: [String: MathAtom] = [
+    static let supportedLatexSymbols: [String: MathAtom] = [
         "square" : MathAtomFactory.placeholder(),
         // Greek characters
         "alpha" : MathAtom(type: .variable, value: "\u{03B1}"),
@@ -425,31 +425,6 @@ struct MathAtomFactory {
         "Œ": ("OE", ""),
     ]
     
-    nonisolated(unsafe) static var textToLatexSymbolName: [String: String] = {
-        var output = [String: String]()
-        for (key, atom) in Self.supportedLatexSymbols {
-            if atom.nucleus.count == 0 {
-                continue
-            }
-            if let existingText = output[atom.nucleus] {
-                // If there are 2 key for the same symbol, choose one deterministically.
-                if key.count > existingText.count {
-                    // Keep the shorter command
-                    continue
-                } else if key.count == existingText.count {
-                    // If the length is the same, keep the alphabetically first
-                    if key.compare(existingText) == .orderedDescending {
-                        continue
-                    }
-                }
-            }
-            output[atom.nucleus] = key
-        }
-        // protect lazily loading table in a multi-thread concurrent environment
-        
-        return output
-    }()
-    
     static let fontStyles : [String: MathFontStyle] = [
         "mathnormal" : .defaultStyle,
         "mathrm": .roman,
@@ -634,29 +609,6 @@ struct MathAtomFactory {
         return nil
     }
     
-    /** Finds the name of the LaTeX symbol name for the given atom. This function is a reverse
-     of the above function. If no latex symbol name corresponds to the atom, then this returns `nil`
-     If nucleus of the atom is empty, then this will return `nil`.
-     Note: This is not an exact reverse of the above in the case of aliases. If an LaTeX alias
-     points to a given symbol, then this function will return the original symbol name and not the
-     alias.
-     Note: This function does not convert MathSpaces to latex command names either.
-     */
-    static func latexSymbolName(for atom: MathAtom) -> String? {
-        guard !atom.nucleus.isEmpty else { return nil }
-        return Self.textToLatexSymbolName[atom.nucleus]
-    }
-    
-    /** Define a latex symbol for rendering. This function allows defining custom symbols that are
-     not already present in the default set, or override existing symbols with new meaning.
-     e.g. to define a symbol for "lcm" one can call:
-     `MathAtomFactory.add(latexSymbol:"lcm", value:MathAtomFactory.operatorWithName("lcm", limits: false))` */
-    static func add(latexSymbol name: String, value: MathAtom) {
-        let _ = Self.textToLatexSymbolName
-        supportedLatexSymbols[name] = value
-        textToLatexSymbolName[value.nucleus] = name
-    }
-    
     /** Returns a large opertor for the given name. If limits is true, limits are set up on
      the operator and displayed differently. */
     static func operatorWithName(_ name: String, limits: Bool) -> MathLargeOperator {
@@ -746,7 +698,7 @@ struct MathAtomFactory {
      @note The reason this function returns a `MathAtom` and not a `MTMathTable` is because some
      matrix environments are have builtin delimiters added to the table and hence are returned as inner atoms.
      */
-    static func table(withEnvironment env: String?, rows: [[MathAtomList]], error:inout NSError?) -> MathAtom? {
+    static func table(withEnvironment env: String?, rows: [[MathAtomList]]) throws -> MathAtom {
         let table = MathTable(environment: env)
         
         for i in 0..<rows.count {
@@ -788,11 +740,7 @@ struct MathAtomFactory {
                 }
             } else if env == "eqalign" || env == "split" || env == "aligned" {
                 if table.numColumns != 2 {
-                    let message = "\(env) environment can only have 2 columns"
-                    if error == nil {
-                        error = NSError(domain: MTParseError, code: MathParseErrors.invalidNumColumns.rawValue, userInfo: [NSLocalizedDescriptionKey:message])
-                    }
-                    return nil
+                    throw MathParseError.invalidNumColumns("\(env) environment can only have 2 columns")
                 }
                 
                 let spacer = MathAtom(type: .ordinary, value: "")
@@ -812,11 +760,7 @@ struct MathAtomFactory {
                 return table
             } else if env == "displaylines" || env == "gather" {
                 if table.numColumns != 1 {
-                    let message = "\(env) environment can only have 1 column"
-                    if error == nil {
-                        error = NSError(domain: MTParseError, code: MathParseErrors.invalidNumColumns.rawValue, userInfo: [NSLocalizedDescriptionKey:message])
-                    }
-                    return nil
+                    throw MathParseError.invalidNumColumns("\(env) environment can only have 1 column")
                 }
                 
                 table.interRowAdditionalSpacing = 1
@@ -827,11 +771,7 @@ struct MathAtomFactory {
                 return table
             } else if env == "eqnarray" {
                 if table.numColumns != 3 {
-                    let message = "\(env) environment can only have 3 columns"
-                    if error == nil {
-                        error = NSError(domain: MTParseError, code: MathParseErrors.invalidNumColumns.rawValue, userInfo: [NSLocalizedDescriptionKey:message])
-                    }
-                    return nil
+                    throw MathParseError.invalidNumColumns("\(env) environment can only have 3 columns")
                 }
                 
                 table.interRowAdditionalSpacing = 1
@@ -844,11 +784,7 @@ struct MathAtomFactory {
                 return table
             } else if env == "cases" {
                 if table.numColumns != 2 {
-                    let message = "cases environment can only have 2 columns"
-                    if error == nil {
-                        error = NSError(domain: MTParseError, code: MathParseErrors.invalidNumColumns.rawValue, userInfo: [NSLocalizedDescriptionKey:message])
-                    }
-                    return nil
+                    throw MathParseError.invalidNumColumns("cases environment can only have 2 columns")
                 }
                 
                 table.interRowAdditionalSpacing = 0
@@ -873,11 +809,9 @@ struct MathAtomFactory {
                 
                 return inner
             } else {
-                let message = "Unknown environment \(env)"
-                error = NSError(domain: MTParseError, code: MathParseErrors.invalidEnv.rawValue, userInfo: [NSLocalizedDescriptionKey:message])
-                return nil
+                throw MathParseError.invalidEnv("Unknown environment \(env)")
             }
         }
-        return nil
+        return table
     }
 }

@@ -9,8 +9,8 @@ import AppKit
 public struct MathImage {
     public var fontSize: CGFloat
     public var textColor: LaTeXColor
-    public var labelMode: MathLabelMode
-    public var textAlignment: TextAlignment
+    public var labelMode: MathLabel.MathMode
+    public var textAlignment: MathLabel.MathAlignment
     public var contentInsets: LaTeXEdgeInsets = zeroInsets
     public let latex: String
     private(set) var intrinsicContentSize = CGSize.zero
@@ -19,8 +19,8 @@ public struct MathImage {
         latex: String,
         fontSize: CGFloat,
         textColor: LaTeXColor,
-        labelMode: MathLabelMode = .display,
-        textAlignment: TextAlignment = .center
+        labelMode: MathLabel.MathMode = .display,
+        textAlignment: MathLabel.MathAlignment = .center
     ) {
         self.latex = latex
         self.fontSize = fontSize
@@ -34,7 +34,7 @@ extension MathImage {
     public var currentStyle: LineStyle {
         switch labelMode {
         case .display: return .display
-        case .text: return .text
+        case .inline: return .text
         }
     }
     private func intrinsicContentSize(_ displayList: MathAtomListDisplay) -> CGSize {
@@ -63,37 +63,45 @@ extension MathImage {
         var error: NSError?
         let MathFont: MathFont = MathFont(name: "latinmodern-math", size: fontSize)
 
-        guard let MathAtomList = MathAtomListBuilder.build(fromString: latex, error: &error), error == nil,
-              let displayList = MTTypesetter.createLineForMathAtomList(MathAtomList, font: MathFont, style: currentStyle) else {
+        do {
+            let MathAtomList = try MathAtomListBuilder.build(fromString: latex)
+            guard let displayList = MTTypesetter.createLineForMathAtomList(MathAtomList, font: MathFont, style: currentStyle) else {
+                return (error, nil)
+            }
+            
+            intrinsicContentSize = intrinsicContentSize(displayList)
+            displayList.textColor = textColor
+
+            let size = intrinsicContentSize.regularized
+            layoutImage(size: size, displayList: displayList)
+            
+            #if os(iOS) || os(visionOS)
+                let renderer = UIGraphicsImageRenderer(size: size)
+                let image = renderer.image { rendererContext in
+                    rendererContext.cgContext.saveGState()
+                    rendererContext.cgContext.concatenate(.flippedVertically(size.height))
+                    displayList.draw(rendererContext.cgContext)
+                    rendererContext.cgContext.restoreGState()
+                }
+                return (nil, image)
+            #endif
+            #if os(macOS)
+                let image = NSImage(size: size, flipped: false) { bounds in
+                    guard let context = NSGraphicsContext.current?.cgContext else { return false }
+                    context.saveGState()
+                    displayList.draw(context)
+                    context.restoreGState()
+                    return true
+                }
+                return (nil, image)
+            #endif
+        } catch let err as MathParseError {
+            error = err as NSError
+            return (error, nil)
+        } catch let err {
+            error = err as NSError
             return (error, nil)
         }
-
-        intrinsicContentSize = intrinsicContentSize(displayList)
-        displayList.textColor = textColor
-
-        let size = intrinsicContentSize.regularized
-        layoutImage(size: size, displayList: displayList)
-        
-        #if os(iOS) || os(visionOS)
-            let renderer = UIGraphicsImageRenderer(size: size)
-            let image = renderer.image { rendererContext in
-                rendererContext.cgContext.saveGState()
-                rendererContext.cgContext.concatenate(.flippedVertically(size.height))
-                displayList.draw(rendererContext.cgContext)
-                rendererContext.cgContext.restoreGState()
-            }
-            return (nil, image)
-        #endif
-        #if os(macOS)
-            let image = NSImage(size: size, flipped: false) { bounds in
-                guard let context = NSGraphicsContext.current?.cgContext else { return false }
-                context.saveGState()
-                displayList.draw(context)
-                context.restoreGState()
-                return true
-            }
-            return (nil, image)
-        #endif
     }
 }
 private extension CGAffineTransform {

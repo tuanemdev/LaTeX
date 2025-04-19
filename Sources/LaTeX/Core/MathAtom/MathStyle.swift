@@ -1,6 +1,6 @@
 import Foundation
 
-public enum LineStyle: Int, Comparable {
+public enum LineStyle: Int {
     /// Display style
     case display
     /// Text style (inline)
@@ -19,11 +19,15 @@ public enum LineStyle: Int, Comparable {
     public var isNotScript: Bool {
         self < .script
     }
-    
+}
+
+extension LineStyle: Comparable {
     public static func < (lhs: LineStyle, rhs: LineStyle) -> Bool {
         lhs.rawValue < rhs.rawValue
     }
 }
+
+extension LineStyle: Sendable { }
 
 // MARK: - MTMathStyle
 public class MathStyle: MathAtom {

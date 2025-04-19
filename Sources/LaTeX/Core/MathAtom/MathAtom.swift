@@ -1,7 +1,7 @@
 import Foundation
 
 /// Một toán tử toán học
-public class MathAtom {
+public class MathAtom: @unchecked Sendable {
     /// Loại toán tử
     public var type: MathAtomType = .ordinary
     
