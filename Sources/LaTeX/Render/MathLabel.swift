@@ -98,10 +98,10 @@ public class MathLabel: LaTeXView {
     
     func initCommon() {
         #if canImport(AppKit)
-        self.layer?.isGeometryFlipped = true
+        self.layer?.isGeometryFlipped = false
         #endif
         #if canImport(UIKit)
-        self.layer.isGeometryFlipped = false
+        self.layer.isGeometryFlipped = true
         #endif
         self.backgroundColor = LaTeXColor.clear
         self.errorLabel.textColor = LaTeXColor.red
